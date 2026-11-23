@@ -13,8 +13,8 @@ Le scelte di progetto sono descritte in [docs/ARCHITETTURA.md](docs/ARCHITETTURA
 
 | Parte | Stato |
 |---|---|
-| Nucleo (`GrooveCore`): file MIDI, groove, inseguimento del clock, motore groove/fill, comandi, libreria | scritto, con test; **da compilare e verificare su Mac** |
-| Riga di comando (`disableton`): `inspect`, `ports`, `monitor`, `play`, `library` | scritta; **da verificare su Mac con il Krome** |
+| Nucleo (`GrooveCore`): file MIDI, groove, inseguimento del clock, motore groove/fill, comandi, libreria | compila; 34 test superati (su Linux); da confermare su Mac |
+| Riga di comando (`disableton`): `inspect`, `ports`, `monitor`, `play`, `library` | `inspect` e `library` provati; `ports`, `monitor`, `play` (CoreMIDI) **da compilare e provare su Mac con il Krome** |
 | Interfaccia grafica (SwiftUI) | da fare, dopo le verifiche della Fase 0 |
 
 ## Requisiti
