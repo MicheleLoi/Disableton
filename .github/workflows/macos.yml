@@ -58,6 +58,36 @@ jobs:
           dist/disableton demo --dir "$RUNNER_TEMP/libreria"
           dist/disableton library show --dir "$RUNNER_TEMP/libreria"
 
+      - name: 12. Avvio dell'app e schermate di ogni vista
+        run: |
+          dist/disableton demo > /dev/null
+          mkdir -p "$RUNNER_TEMP/schermate"
+          for MODE in prep commands stage settings; do
+            if [ "$MODE" = settings ]; then
+              DISABLETON_MODE=prep DISABLETON_SETTINGS=1 dist/Disableton.app/Contents/MacOS/Disableton &
+            else
+              DISABLETON_MODE=$MODE dist/Disableton.app/Contents/MacOS/Disableton &
+            fi
+            PID=$!
+            sleep 8
+            if ! kill -0 $PID 2>/dev/null; then
+              echo "L'app si è chiusa da sola (vista $MODE)"
+              wait $PID || true
+              exit 1
+            fi
+            screencapture -x "$RUNNER_TEMP/schermate/$MODE.png" || echo "schermata non disponibile"
+            kill $PID
+            wait $PID 2>/dev/null || true
+            echo "Vista $MODE: avviata e in esecuzione"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Schermate
+          path: ${{ runner.temp }}/schermate
+          if-no-files-found: ignore
+          retention-days: 30
+
       - uses: actions/upload-artifact@v4
         with:
           name: Disableton-macOS

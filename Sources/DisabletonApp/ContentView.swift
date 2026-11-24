@@ -3,59 +3,33 @@ import GrooveCore
 import MIDIHost
 import SwiftUI
 
-enum AppSection: String, CaseIterable, Identifiable {
-    case stage, songs, grooves, controls, settings
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .stage: return "Palco"
-        case .songs: return "Brani"
-        case .grooves: return "Groove"
-        case .controls: return "Comandi MIDI"
-        case .settings: return "Impostazioni"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .stage: return "play.circle"
-        case .songs: return "music.note.list"
-        case .grooves: return "square.stack.3d.up"
-        case .controls: return "pianokeys"
-        case .settings: return "gearshape"
-        }
-    }
-}
-
 struct ContentView: View {
     @EnvironmentObject var model: AppModel
-    @State private var section: AppSection? = .stage
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        HStack(spacing: 0) {
-            VStack(spacing: 0) {
-                List(selection: $section) {
-                    ForEach(AppSection.allCases) { item in
-                        Label(item.title, systemImage: item.icon)
-                            .tag(item)
-                    }
-                }
-                .listStyle(.sidebar)
-                Divider()
-                ConnectionBadge()
-                    .padding(10)
+        VStack(spacing: 0) {
+            if model.mode != .stage {
+                ModeBar()
+                StatusBar()
             }
-            .frame(width: 210)
-
-            Divider()
-
-            detail
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            switch model.mode {
+            case .prep: PrepView()
+            case .commands: CommandsView()
+            case .stage: StageView()
+            }
         }
         .onReceive(timer) { _ in model.poll() }
+        .sheet(isPresented: $model.showSettings) {
+            SettingsView()
+                .environmentObject(model)
+                .frame(width: 760, height: 700)
+        }
+        .sheet(item: detailGroove) { item in
+            GrooveDetailView(grooveID: item.id, onDelete: {})
+                .environmentObject(model)
+                .frame(width: 620, height: 640)
+        }
         .alert("Disableton", isPresented: errorShown, actions: {
             Button("OK") { model.errorMessage = nil }
         }, message: {
@@ -63,65 +37,132 @@ struct ContentView: View {
         })
     }
 
-    @ViewBuilder
-    private var detail: some View {
-        switch section ?? .stage {
-        case .stage: StageView()
-        case .songs: SongsView()
-        case .grooves: GroovesView()
-        case .controls: ControlsView()
-        case .settings: SettingsView()
-        }
-    }
-
     private var errorShown: Binding<Bool> {
         Binding(get: { model.errorMessage != nil },
                 set: { shown in if !shown { model.errorMessage = nil } })
     }
+
+    private var detailGroove: Binding<GrooveSheetItem?> {
+        Binding(get: { model.detailGrooveID.map { GrooveSheetItem(id: $0) } },
+                set: { model.detailGrooveID = $0?.id })
+    }
 }
 
-/// Indicatore di collegamento in fondo alla barra laterale.
-struct ConnectionBadge: View {
+struct GrooveSheetItem: Identifiable {
+    let id: UUID
+}
+
+/// Selettore delle tre viste e accesso alle impostazioni.
+struct ModeBar: View {
+    @EnvironmentObject var model: AppModel
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text("Disableton").font(.headline)
+            Spacer()
+            Picker("Vista", selection: $model.mode) {
+                ForEach(AppMode.allCases) { mode in
+                    Text(mode.title).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 360)
+            Spacer()
+            Button {
+                model.refreshPorts()
+                model.showSettings = true
+            } label: {
+                Image(systemName: "gearshape")
+            }
+            .help("Impostazioni")
+            .keyboardShortcut(",", modifiers: .command)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color(nsColor: .windowBackgroundColor))
+    }
+}
+
+/// Barra di stato scura, sempre visibile in Preparazione e Comandi.
+struct StatusBar: View {
     @EnvironmentObject var model: AppModel
 
     var body: some View {
         let snap = model.snapshot
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(color(snap))
-                    .frame(width: 10, height: 10)
-                Text(text(snap))
-                    .font(.callout)
+        let status = snap?.status
+        HStack(spacing: 18) {
+            HStack(spacing: 8) {
+                Circle().fill(clockColor(snap)).frame(width: 10, height: 10)
+                Text(clockText(snap)).font(.callout.weight(.semibold))
             }
-            Text(model.connectedInputs.isEmpty ? "Nessun ingresso MIDI" : "Ingresso: " + model.connectedInputs.joined(separator: ", "))
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .lineLimit(2)
-            Text("Uscita: \(LiveHost.virtualPortName), canale \(model.library.outputChannel)")
-                .font(.caption)
-                .foregroundColor(.secondary)
-            if let snap, !snap.realtimePriority {
-                Text("Priorità tempo reale non ottenuta")
-                    .font(.caption)
-                    .foregroundColor(.orange)
+            Text(snap?.tempoBPM.map { String(format: "%.1f BPM", $0) } ?? "– BPM")
+                .font(.title3.weight(.bold).monospacedDigit())
+            Text(barText(snap))
+                .font(.title3.weight(.bold).monospacedDigit())
+            BeatDots(beat: snap?.beat, count: snap?.beatsPerBar ?? 4, size: 12, lit: Color.green, unlit: Color.gray.opacity(0.6))
+            if let playing = status?.playingSlotName {
+                Text("Suona ") + Text(playing).bold()
+            } else {
+                Text("Silenzio").foregroundColor(.gray)
+            }
+            if status?.stopPending == true {
+                Text("→ silenzio dalla prossima battuta").foregroundColor(.orange)
+            } else if let next = status?.pendingSlotName {
+                Text("→ \(next)").foregroundColor(.orange)
+            }
+            Spacer()
+            if snap?.realtimePriority == false {
+                Text("Priorità tempo reale non ottenuta").font(.caption).foregroundColor(.orange)
+            }
+            Button(role: .destructive) { model.panic() } label: {
+                Text("Panic").fontWeight(.semibold)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .foregroundColor(.white)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 10)
+        .background(Color(red: 0.11, green: 0.11, blue: 0.12))
     }
 
-    private func color(_ snap: LiveSnapshot?) -> Color {
-        guard model.engineRunning else { return .red }
-        guard let snap else { return .gray }
-        if snap.previewing { return .blue }
+    private func clockColor(_ snap: LiveSnapshot?) -> Color {
+        guard model.engineRunning, let snap else { return .red }
+        if snap.internalClock || snap.previewing { return .blue }
         return snap.clockReceiving ? .green : .orange
     }
 
-    private func text(_ snap: LiveSnapshot?) -> String {
+    private func clockText(_ snap: LiveSnapshot?) -> String {
         guard model.engineRunning else { return "Motore MIDI fermo" }
         guard let snap else { return "Avvio…" }
-        if snap.previewing { return "Ascolto in corso" }
-        return snap.clockReceiving ? "Clock dal Krome" : "In attesa del clock"
+        if snap.previewing { return "Ascolto" }
+        if snap.internalClock { return "Clock interno" }
+        return snap.clockReceiving ? "Clock Krome" : "In attesa del clock"
+    }
+
+    private func barText(_ snap: LiveSnapshot?) -> String {
+        guard let bar = snap?.bar else { return "–" }
+        return snap?.beat.map { "\(bar) · \($0)" } ?? "\(bar)"
+    }
+}
+
+/// Indicatore dei battiti della battuta.
+struct BeatDots: View {
+    let beat: Int?
+    let count: Int
+    let size: CGFloat
+    let lit: Color
+    let unlit: Color
+
+    var body: some View {
+        HStack(spacing: size / 2) {
+            ForEach(0..<max(1, min(count, 12)), id: \.self) { i in
+                Circle()
+                    .fill(beat == i + 1 ? lit : unlit)
+                    .frame(width: size, height: size)
+            }
+        }
+        .accessibilityElement()
+        .accessibilityLabel(beat.map { "Battito \($0) di \(count)" } ?? "Fermo")
     }
 }
 #endif

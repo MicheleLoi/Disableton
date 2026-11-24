@@ -3,154 +3,171 @@ import GrooveCore
 import MIDIHost
 import SwiftUI
 
-/// Schermata per l'esecuzione: stato grande e leggibile, comandi di emergenza con il mouse.
+/// Palco: schermata scura a tutto schermo, leggibile da 2–3 metri, senza interazione.
 struct StageView: View {
     @EnvironmentObject var model: AppModel
+
+    private let background = Color(red: 0.04, green: 0.04, blue: 0.05)
+    private let secondary = Color(white: 0.64)
 
     var body: some View {
         let snap = model.snapshot
         let status = snap?.status
         let songIndex = status?.songIndex
-        let song: SongRecord? = songIndex.flatMap { model.library.songs.indices.contains($0) ? model.library.songs[$0] : nil }
+        let songCount = model.library.songs.count
 
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                // Brano
-                HStack(alignment: .center, spacing: 16) {
-                    Button { model.perform(.previousSong) } label: {
-                        Image(systemName: "chevron.left").font(.title)
-                    }
-                    .buttonStyle(.borderless)
-                    .help("Brano precedente")
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(songIndex.map { "Brano \($0 + 1) di \(model.library.songs.count)" } ?? "Nessun brano")
-                            .foregroundColor(.secondary)
-                        Text(status?.songName ?? "Aggiungi un brano nella sezione Brani")
-                            .font(.system(size: 34, weight: .bold))
-                            .lineLimit(1)
-                    }
-
-                    Spacer()
-
-                    Button { model.perform(.nextSong) } label: {
-                        Image(systemName: "chevron.right").font(.title)
-                    }
-                    .buttonStyle(.borderless)
-                    .help("Brano successivo")
-                }
-
-                // Tempo, battuta, trasporto
-                HStack(spacing: 14) {
-                    StatBox(title: "Trasporto", value: (status?.transportRunning ?? false) ? "▶︎ In corso" : "■ Fermo")
-                    StatBox(title: "Battuta", value: snap?.bar.map { "\($0)" } ?? "–")
-                    StatBox(title: "Tempo", value: snap?.tempoBPM.map { String(format: "%.1f BPM", $0) } ?? "–")
-                    StatBox(title: "Clock", value: (snap?.clockReceiving ?? false) ? "Ricevuto" : "Assente")
-                }
-
-                // Groove in corso
-                GroupBox {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(status?.playingSlotName ?? "Silenzio")
-                            .font(.system(size: 28, weight: .semibold))
-                        if status?.stopPending == true {
-                            Text("In coda: silenzio dalla prossima battuta").foregroundColor(.orange)
-                        } else if let next = status?.pendingSlotName {
-                            Text("In coda: \(next)").foregroundColor(.orange)
-                        } else if let armed = status?.armedSlot, let song, song.slots.indices.contains(armed) {
-                            Text("Pronto allo Start: \(model.displayName(of: song.slots[armed]))").foregroundColor(.blue)
-                        } else {
-                            Text(" ").foregroundColor(.secondary)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(6)
-                } label: {
-                    Text("Groove")
-                }
-
-                // Groove del brano
-                if let song {
-                    Text("Groove del brano").font(.headline)
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 180), spacing: 10)], spacing: 10) {
-                        ForEach(Array(song.slots.enumerated()), id: \.element.id) { index, slot in
-                            SlotButton(index: index, name: model.displayName(of: slot), mode: slot.mode,
-                                       playing: status?.playingSlot == index,
-                                       pending: status?.pendingSlot == index) {
-                                model.perform(.triggerSlot(index))
-                            }
-                        }
-                    }
-                }
-
-                // Comandi
+        VStack(alignment: .leading, spacing: 26) {
+            HStack {
+                Text(songIndex.map { "BRANO \($0 + 1) / \(songCount)" } ?? "NESSUN BRANO")
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundColor(secondary)
+                Spacer()
                 HStack(spacing: 10) {
-                    Button("Fill") { model.perform(.fill) }
-                    Button("Groove successivo") { model.perform(.nextSlot) }
-                    Button("Silenzio a fine battuta") { model.perform(.stopAtBarEnd) }
-                    Spacer()
-                    Button(role: .destructive) { model.panic() } label: {
-                        Label("Panic", systemImage: "exclamationmark.octagon")
-                    }
+                    Circle().fill(clockColor(snap)).frame(width: 16, height: 16)
+                    Text(clockText(snap)).font(.system(size: 22, weight: .semibold))
                 }
-                .controlSize(.large)
+                Button("Preparazione") { model.mode = .prep }
+                    .keyboardShortcut(.cancelAction)
+                    .padding(.leading, 20)
+                Button { model.toggleFullScreen() } label: {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                }
+                .help("Schermo intero")
+                .keyboardShortcut("f", modifiers: [.command, .control])
+            }
 
-                if let last = snap?.lastCommand {
-                    Text("Ultimo comando ricevuto: \(last)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+            Text(status?.songName ?? "–")
+                .font(.system(size: 76, weight: .heavy))
+                .lineLimit(1)
+                .minimumScaleFactor(0.4)
+
+            HStack(alignment: .top, spacing: 28) {
+                Panel(title: "SUONA", titleColor: Color(red: 0.53, green: 0.94, blue: 0.67),
+                      main: status?.playingSlotName ?? "Silenzio", mainSize: 64,
+                      detail: playingDetail(status),
+                      fill: Color(red: 0.06, green: 0.19, blue: 0.11),
+                      border: Color(red: 0.29, green: 0.87, blue: 0.5))
+                    .frame(maxWidth: .infinity)
+                Panel(title: nextTitle(status), titleColor: Color(red: 0.99, green: 0.83, blue: 0.3),
+                      main: nextName(status), mainSize: 52,
+                      detail: nextDetail(status),
+                      fill: Color(red: 0.18, green: 0.12, blue: 0.03),
+                      border: Color(red: 0.98, green: 0.75, blue: 0.14))
+                    .frame(maxWidth: .infinity)
+                    .layoutPriority(-1)
+            }
+
+            HStack(alignment: .center, spacing: 40) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("BATTUTA").font(.system(size: 20, weight: .semibold)).foregroundColor(secondary)
+                    Text(snap?.bar.map { "\($0)" } ?? "–")
+                        .font(.system(size: 96, weight: .heavy).monospacedDigit())
+                }
+                BeatDots(beat: snap?.beat, count: snap?.beatsPerBar ?? 4, size: 64,
+                         lit: Color(red: 0.29, green: 0.87, blue: 0.5), unlit: Color(white: 0.25))
+                Spacer()
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("TEMPO").font(.system(size: 20, weight: .semibold)).foregroundColor(secondary)
+                    Text(snap?.tempoBPM.map { String(format: "%.0f", $0) } ?? "–")
+                        .font(.system(size: 72, weight: .heavy).monospacedDigit())
                 }
             }
-            .padding(24)
+
+            Spacer()
+
+            HStack(spacing: 18) {
+                Text("Brano successivo:").font(.system(size: 24)).foregroundColor(secondary)
+                Text(nextSong(songIndex)).font(.system(size: 28, weight: .bold))
+                Spacer()
+                Text("Esc = Preparazione").font(.system(size: 16)).foregroundColor(secondary)
+            }
+            .padding(.top, 14)
+            .overlay(Rectangle().frame(height: 1).foregroundColor(Color(white: 0.25)), alignment: .top)
         }
+        .padding(.horizontal, 48)
+        .padding(.vertical, 32)
+        .foregroundColor(.white)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(background)
+    }
+
+    private func clockColor(_ snap: LiveSnapshot?) -> Color {
+        guard let snap else { return .red }
+        if snap.internalClock || snap.previewing { return .blue }
+        return snap.clockReceiving ? Color(red: 0.29, green: 0.87, blue: 0.5) : .orange
+    }
+
+    private func clockText(_ snap: LiveSnapshot?) -> String {
+        guard let snap else { return "MOTORE FERMO" }
+        if snap.internalClock { return "CLOCK INTERNO" }
+        if snap.previewing { return "ASCOLTO" }
+        return snap.clockReceiving ? "CLOCK KROME" : "ATTESA CLOCK"
+    }
+
+    private func slot(_ index: Int?, in status: PlaybackStatus?) -> SlotRecord? {
+        guard let index, let s = status?.songIndex, model.library.songs.indices.contains(s),
+              model.library.songs[s].slots.indices.contains(index) else { return nil }
+        return model.library.songs[s].slots[index]
+    }
+
+    private func playingDetail(_ status: PlaybackStatus?) -> String {
+        guard let i = status?.playingSlot, let slot = slot(i, in: status) else { return " " }
+        return "Slot \(i + 1) · \(slot.mode.label.lowercased())"
+    }
+
+    private func nextTitle(_ status: PlaybackStatus?) -> String {
+        status?.pendingSlot != nil || status?.stopPending == true ? "PROSSIMO" : "IN CODA"
+    }
+
+    private func nextName(_ status: PlaybackStatus?) -> String {
+        if status?.stopPending == true { return "Silenzio" }
+        return status?.pendingSlotName ?? "–"
+    }
+
+    private func nextDetail(_ status: PlaybackStatus?) -> String {
+        guard let i = status?.pendingSlot, let slot = slot(i, in: status) else { return " " }
+        switch slot.mode {
+        case .oneShotReturn:
+            return "poi torna a \(status?.playingSlotName ?? "il groove precedente")"
+        case .oneShotNext:
+            return "poi il groove successivo"
+        case .oneShotStop:
+            return "poi silenzio"
+        case .loop:
+            return slot.quantize.label.lowercased()
+        }
+    }
+
+    private func nextSong(_ index: Int?) -> String {
+        let next = (index ?? -1) + 1
+        guard model.library.songs.indices.contains(next) else { return "fine della scaletta" }
+        return "\(next + 1) · \(model.library.songs[next].name)"
     }
 }
 
-struct StatBox: View {
+private struct Panel: View {
     let title: String
-    let value: String
+    let titleColor: Color
+    let main: String
+    let mainSize: CGFloat
+    let detail: String
+    let fill: Color
+    let border: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.caption).foregroundColor(.secondary)
-            Text(value).font(.title2.monospacedDigit())
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(.system(size: 22, weight: .semibold)).foregroundColor(titleColor)
+            Text(main)
+                .font(.system(size: mainSize, weight: .heavy))
+                .lineLimit(1)
+                .minimumScaleFactor(0.4)
+            Text(detail).font(.system(size: 26)).foregroundColor(Color(white: 0.85)).lineLimit(1)
         }
-        .padding(10)
-        .frame(minWidth: 130, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.12)))
-    }
-}
-
-struct SlotButton: View {
-    let index: Int
-    let name: String
-    let mode: SlotMode
-    let playing: Bool
-    let pending: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("\(index + 1)").font(.headline.monospacedDigit())
-                    Spacer()
-                    if let note = defaultNoteLabel(forSlot: index) {
-                        Text(note).font(.caption).foregroundColor(.secondary)
-                    }
-                }
-                Text(name).font(.body.weight(.semibold)).lineLimit(1)
-                Text(mode.label).font(.caption).foregroundColor(.secondary)
-            }
-            .padding(10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(playing ? Color.green.opacity(0.35) : (pending ? Color.orange.opacity(0.3) : Color.secondary.opacity(0.12)))
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 30)
+        .padding(.vertical, 26)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 20).fill(fill))
+        .overlay(RoundedRectangle(cornerRadius: 20).stroke(border, lineWidth: 3))
     }
 }
 #endif

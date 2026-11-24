@@ -1,111 +1,14 @@
 #if canImport(SwiftUI) && os(macOS)
 import GrooveCore
 import SwiftUI
-import UniformTypeIdentifiers
 
-/// Libreria dei groove: importazione, informazioni, ascolto.
-struct GroovesView: View {
-    @EnvironmentObject var model: AppModel
-    @State private var selection: UUID?
-    @State private var search = ""
-    @State private var showImporter = false
-    @State private var importAsEZdrummer = true
-    @State private var dropTargeted = false
-
-    private var filtered: [GrooveRecord] {
-        let all = model.library.grooves
-        let query = search.trimmingCharacters(in: .whitespaces)
-        guard !query.isEmpty else { return all }
-        return all.filter { $0.name.localizedCaseInsensitiveContains(query) }
-    }
-
-    var body: some View {
-        HStack(spacing: 0) {
-            VStack(spacing: 0) {
-                TextField("Cerca", text: $search)
-                    .textFieldStyle(.roundedBorder)
-                    .padding(8)
-                List(selection: $selection) {
-                    ForEach(filtered) { record in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(record.name)
-                            Text(subtitle(record))
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .tag(record.id)
-                    }
-                }
-                Divider()
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Button { showImporter = true } label: {
-                            Label("Importa file MIDI…", systemImage: "square.and.arrow.down")
-                        }
-                        Spacer()
-                    }
-                    Toggle("Provenienza: EZdrummer 3", isOn: $importAsEZdrummer)
-                        .toggleStyle(.checkbox)
-                    Text("Puoi anche trascinare qui i file .mid dal Finder o da EZdrummer 3.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .padding(8)
-            }
-            .frame(width: 300)
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color.accentColor, lineWidth: 3)
-                    .opacity(dropTargeted ? 1 : 0)
-            )
-            .onDrop(of: [UTType.fileURL, UTType.midi], isTargeted: $dropTargeted) { providers in
-                model.handleDrop(providers, source: importAsEZdrummer ? .ezdrummer : .user)
-            }
-
-            Divider()
-
-            if let id = selection, model.library.groove(id: id) != nil {
-                GrooveDetailView(grooveID: id, onDelete: { selection = nil })
-            } else {
-                VStack(spacing: 8) {
-                    Text(model.library.grooves.isEmpty ? "La libreria è vuota" : "Seleziona un groove")
-                        .foregroundColor(.secondary)
-                    Text("Da EZdrummer 3: trascina un groove dal suo browser sulla Scrivania o direttamente qui.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        }
-        .fileImporter(isPresented: $showImporter, allowedContentTypes: [UTType.midi], allowsMultipleSelection: true) { result in
-            switch result {
-            case let .success(urls):
-                model.importFiles(urls, source: importAsEZdrummer ? .ezdrummer : .user)
-            case let .failure(error):
-                model.errorMessage = "\(error.localizedDescription)"
-            }
-        }
-    }
-
-    private func subtitle(_ record: GrooveRecord) -> String {
-        var parts = [record.source.label]
-        if let g = model.groove(for: record) {
-            parts.append(String(format: "%.0f batt.", g.lengthBars.rounded(.up)))
-            parts.append(g.timeSignature.description)
-        } else {
-            parts.append("file non leggibile")
-        }
-        let uses = model.library.songsUsing(grooveID: record.id).count
-        if uses > 0 { parts.append("in \(uses) brani") }
-        return parts.joined(separator: " · ")
-    }
-}
-
+/// Dettagli di un groove (aperti dalla libreria): nome, provenienza, lunghezza, metro, ascolto.
 struct GrooveDetailView: View {
     @EnvironmentObject var model: AppModel
     let grooveID: UUID
     let onDelete: () -> Void
     @State private var confirmDelete = false
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         if let record = model.library.groove(id: grooveID) {
@@ -115,9 +18,16 @@ struct GrooveDetailView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    TextField("Nome", text: model.grooveBinding(grooveID, \.name, fallback: ""))
-                        .textFieldStyle(.roundedBorder)
-                        .font(.title2)
+                    HStack {
+                        TextField("Nome", text: model.grooveBinding(grooveID, \.name, fallback: ""))
+                            .textFieldStyle(.roundedBorder)
+                            .font(.title2)
+                        Button("Fine") {
+                            model.stopPreview()
+                            dismiss()
+                        }
+                        .keyboardShortcut(.defaultAction)
+                    }
 
                     Form {
                         Picker("Provenienza", selection: model.grooveBinding(grooveID, \.source, fallback: .user)) {
@@ -205,6 +115,7 @@ struct GrooveDetailView: View {
                 Button("Elimina", role: .destructive) {
                     onDelete()
                     model.deleteGroove(id: grooveID)
+                    dismiss()
                 }
             } message: {
                 Text(usedIn.isEmpty ? "Il file verrà rimosso dalla libreria."

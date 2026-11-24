@@ -6,6 +6,19 @@ import MIDIHost
 import SwiftUI
 import UniformTypeIdentifiers
 
+/// Le tre viste dell'app.
+enum AppMode: String, CaseIterable, Identifiable {
+    case prep, commands, stage
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .prep: return "Preparazione"
+        case .commands: return "Comandi"
+        case .stage: return "Palco"
+        }
+    }
+}
+
 /// Stato dell'app. Ogni modifica alla libreria viene salvata subito su disco e passata al motore.
 /// Tutti i metodi vanno chiamati dal thread principale.
 final class AppModel: ObservableObject {
@@ -14,8 +27,15 @@ final class AppModel: ObservableObject {
             if library != oldValue { libraryChanged(from: oldValue) }
         }
     }
+    @Published var mode: AppMode = .prep
+    @Published var showSettings = false
+    @Published var selectedSongID: UUID?
+    @Published var selectedSlotID: UUID?
+    @Published var selectedKey: Int? = 38
+    @Published var detailGrooveID: UUID?
     @Published private(set) var snapshot: LiveSnapshot?
     @Published private(set) var availableInputs: [String] = []
+    @Published private(set) var availableDestinations: [String] = []
     @Published private(set) var connectedInputs: [String] = []
     @Published private(set) var engineRunning = false
     @Published var errorMessage: String?
@@ -42,7 +62,13 @@ final class AppModel: ObservableObject {
         store = openedStore
         library = openedStore?.library ?? Library()
         errorMessage = openError
-        refreshInputs()
+        selectedSongID = library.songs.first?.id
+        selectedSlotID = library.songs.first?.slots.dropFirst().first?.id
+        // Usato dalla verifica automatica per fotografare ogni vista.
+        let environment = ProcessInfo.processInfo.environment
+        if let raw = environment["DISABLETON_MODE"], let initial = AppMode(rawValue: raw) { mode = initial }
+        if environment["DISABLETON_SETTINGS"] == "1" { showSettings = true }
+        refreshPorts()
         startEngine()
     }
 
@@ -56,10 +82,11 @@ final class AppModel: ObservableObject {
         host = nil
         do {
             let songs = try store.engineSongs()
+            let p = library.performance
             let newHost = try LiveHost(songs: songs, controlMap: library.controlMap,
                                        outputChannel: library.outputChannel,
-                                       settings: library.performance.playbackSettings,
-                                       inputFilter: library.performance.inputFilter)
+                                       settings: p.playbackSettings, inputFilter: p.inputFilter,
+                                       output: p.soundOutput, destinationFilter: p.destinationFilter)
             host = newHost
             connectedInputs = newHost.connectedInputs
             engineRunning = true
@@ -87,14 +114,18 @@ final class AppModel: ObservableObject {
         } catch {
             errorMessage = "Salvataggio non riuscito: \(error)"
         }
+        guard let host else { return }
         if library.performance.inputFilter != old.performance.inputFilter {
-            reconnectInput()
+            do {
+                connectedInputs = try host.reconnect(inputFilter: library.performance.inputFilter)
+            } catch {
+                errorMessage = "Collegamento MIDI non riuscito: \(error)"
+            }
         }
-        pushToEngine()
-    }
-
-    private func pushToEngine() {
-        guard let store, let host else { return }
+        if library.performance.soundOutput != old.performance.soundOutput
+            || library.performance.destinationFilter != old.performance.destinationFilter {
+            host.configureOutput(library.performance.soundOutput, destinationFilter: library.performance.destinationFilter)
+        }
         do {
             let songs = try store.engineSongs()
             host.update(songs: songs, controlMap: library.controlMap, outputChannel: library.outputChannel,
@@ -104,22 +135,14 @@ final class AppModel: ObservableObject {
         }
     }
 
-    // MARK: - Ingresso MIDI
+    // MARK: - Porte MIDI
 
-    func refreshInputs() {
+    func refreshPorts() {
         availableInputs = LiveHost.sourceNames()
+        availableDestinations = LiveHost.destinationNames()
     }
 
-    private func reconnectInput() {
-        guard let host else { return }
-        do {
-            connectedInputs = try host.reconnect(inputFilter: library.performance.inputFilter)
-        } catch {
-            errorMessage = "Collegamento MIDI non riuscito: \(error)"
-        }
-    }
-
-    // MARK: - Comandi dall'interfaccia
+    // MARK: - Comandi e trasporto
 
     func perform(_ action: ControlAction) {
         host?.perform(action)
@@ -127,6 +150,72 @@ final class AppModel: ObservableObject {
 
     func panic() {
         host?.panic()
+    }
+
+    func startInternalClock() {
+        previewingGrooveID = nil
+        host?.startInternalClock(bpm: library.performance.internalBPM)
+    }
+
+    func stopInternalClock() {
+        host?.stopInternalClock()
+    }
+
+    // MARK: - Brani e slot
+
+    var selectedSongIndex: Int? {
+        selectedSongID.flatMap { library.songIndex(id: $0) }
+    }
+
+    var selectedSlotIndex: Int? {
+        guard let s = selectedSongIndex, let id = selectedSlotID else { return nil }
+        return library.songs[s].slots.firstIndex { $0.id == id }
+    }
+
+    func addSong() {
+        let id = library.addSong(name: "Brano \(library.songs.count + 1)")
+        selectedSongID = id
+        selectedSlotID = nil
+    }
+
+    func deleteSong(_ id: UUID) {
+        guard let index = library.songIndex(id: id) else { return }
+        library.removeSongs(atOffsets: IndexSet(integer: index))
+        if selectedSongID == id { selectedSongID = library.songs.first?.id }
+        selectedSlotID = nil
+    }
+
+    /// Aggiunge un groove in fondo al brano selezionato (fill se il nome contiene "fill").
+    func addSlot(grooveID: UUID) {
+        guard let s = selectedSongIndex, let record = library.groove(id: grooveID) else { return }
+        let mode: SlotMode = record.name.localizedCaseInsensitiveContains("fill") ? .oneShotReturn
+            : (record.name.localizedCaseInsensitiveContains("finale") ? .oneShotStop : .loop)
+        selectedSlotID = library.addSlot(toSong: s, grooveID: grooveID, mode: mode)
+    }
+
+    func moveSelectedSlot(by delta: Int) {
+        guard let s = selectedSongIndex, let k = selectedSlotIndex else { return }
+        let target = k + delta
+        guard library.songs[s].slots.indices.contains(target) else { return }
+        library.moveSlots(inSong: s, fromOffsets: IndexSet(integer: k), toOffset: delta > 0 ? target + 1 : target)
+    }
+
+    func removeSelectedSlot() {
+        guard let s = selectedSongIndex, let k = selectedSlotIndex else { return }
+        library.removeSlots(fromSong: s, atOffsets: IndexSet(integer: k))
+        selectedSlotID = nil
+    }
+
+    func installDemo() {
+        guard let store else { return }
+        do {
+            let added = try store.installDemoContent()
+            library = store.library
+            if selectedSongID == nil { selectedSongID = library.songs.first?.id }
+            if added == 0 { errorMessage = "I brani dimostrativi sono già presenti." }
+        } catch {
+            errorMessage = "\(error)"
+        }
     }
 
     // MARK: - Import
@@ -160,7 +249,7 @@ final class AppModel: ObservableObject {
     }
 
     /// File trascinati dal Finder o da EZdrummer 3.
-    func handleDrop(_ providers: [NSItemProvider], source: GrooveSource) -> Bool {
+    func handleFileDrop(_ providers: [NSItemProvider], source: GrooveSource) -> Bool {
         var accepted = false
         for provider in providers {
             if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
@@ -182,6 +271,19 @@ final class AppModel: ObservableObject {
                     guard let data else { return }
                     DispatchQueue.main.async { self.importData(data, name: name, source: source) }
                 }
+            }
+        }
+        return accepted
+    }
+
+    /// Groove della libreria trascinati sulla sequenza del brano.
+    func handleGrooveDrop(_ providers: [NSItemProvider]) -> Bool {
+        var accepted = false
+        for provider in providers where provider.canLoadObject(ofClass: NSString.self) {
+            accepted = true
+            _ = provider.loadObject(ofClass: NSString.self) { object, _ in
+                guard let text = object as? NSString, let id = UUID(uuidString: text as String) else { return }
+                DispatchQueue.main.async { self.addSlot(grooveID: id) }
             }
         }
         return accepted
@@ -219,7 +321,26 @@ final class AppModel: ObservableObject {
         previewingGrooveID = nil
     }
 
-    // MARK: - MIDI Learn
+    // MARK: - Comandi MIDI e MIDI Learn
+
+    /// Azione assegnata a una nota sul canale 16.
+    func action(forNote note: Int) -> ControlAction? {
+        library.controlMap.action(for: .noteOn(channel: 15, note: UInt8(clamping: note), velocity: 100))
+    }
+
+    /// Assegna (o toglie, con nil) l'azione di una nota sul canale 16.
+    func setAction(_ action: ControlAction?, forNote note: Int) {
+        var bindings = library.controlMap.bindings.filter { !($0.kind == .note && $0.channel == 16 && $0.number == note) }
+        if let action {
+            bindings.append(ControlBinding(kind: .note, channel: 16, number: note, action: action))
+        }
+        library.controlMap.bindings = bindings
+    }
+
+    /// Indice dell'associazione per uno slot (nota), per il pulsante "Impara" della Preparazione.
+    func learnKey(forSlot index: Int) {
+        startLearning(.new(.triggerSlot(index)))
+    }
 
     func learn(bindingAt index: Int) {
         guard library.controlMap.bindings.indices.contains(index) else { return }
@@ -257,7 +378,15 @@ final class AppModel: ObservableObject {
             library.controlMap.bindings[index] = binding
         case let .new(action):
             guard let binding = ControlBinding.learn(from: message, action: action) else { return }
-            library.controlMap.bindings.append(binding)
+            // Il nuovo controllo sostituisce sia il vecchio controllo di questa azione (stesso tipo)
+            // sia l'azione che il controllo aveva prima.
+            var bindings = library.controlMap.bindings.filter { b in
+                !(b.action == action && b.kind == binding.kind)
+                    && !(b.kind == binding.kind && b.channel == binding.channel && b.number == binding.number)
+            }
+            bindings.append(binding)
+            library.controlMap.bindings = bindings
+            if binding.kind == .note, let n = binding.number { selectedKey = n }
         }
     }
 
@@ -315,6 +444,10 @@ final class AppModel: ObservableObject {
 
     func showLibraryInFinder() {
         NSWorkspace.shared.activateFileViewerSelecting([libraryFolder.appendingPathComponent("library.json")])
+    }
+
+    func toggleFullScreen() {
+        NSApp.keyWindow?.toggleFullScreen(nil)
     }
 
     /// Nome visualizzato di uno slot.
