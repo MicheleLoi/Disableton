@@ -155,52 +155,45 @@ struct SlotCard: View {
     let index: Int
     let slot: SlotRecord
 
-    var body: some View {
-        let status = model.snapshot?.status
-        let isCurrentSong = status?.songIndex == songIndex
-        let playing = isCurrentSong && status?.playingSlot == index
-        let pending = isCurrentSong && status?.pendingSlot == index
-        let selected = model.selectedSlotID == slot.id
-        let isAuto = model.library.songs[songIndex].autoStartSlot == index
-        let length = model.library.groove(id: slot.grooveID).flatMap { model.groove(for: $0) }?.lengthBars
+    private var isCurrentSong: Bool { model.snapshot?.status.songIndex == songIndex }
+    private var playing: Bool { isCurrentSong && model.snapshot?.status.playingSlot == index }
+    private var pending: Bool { isCurrentSong && model.snapshot?.status.pendingSlot == index }
+    private var selected: Bool { model.selectedSlotID == slot.id }
+    private var isAutoStart: Bool {
+        model.library.songs.indices.contains(songIndex) && model.library.songs[songIndex].autoStartSlot == index
+    }
 
+    private var header: String {
+        guard let note = defaultNoteLabel(forSlot: index) else { return "\(index + 1)" }
+        return "\(index + 1) · \(note)"
+    }
+
+    private var detail: String {
+        var text = symbol(slot.mode) + " " + slot.mode.label
+        if let record = model.library.groove(id: slot.grooveID), let groove = model.groove(for: record) {
+            text += String(format: " · %.0f batt.", groove.lengthBars.rounded(.up))
+        }
+        return text
+    }
+
+    private var fillColor: Color {
+        if playing { return Color.green.opacity(0.25) }
+        if pending { return Color.orange.opacity(0.25) }
+        return Color.gray.opacity(0.1)
+    }
+
+    private var borderColor: Color {
+        if selected { return Color.accentColor }
+        if playing { return Color.green }
+        if pending { return Color.orange }
+        return Color.clear
+    }
+
+    var body: some View {
         Button {
             model.selectedSlotID = slot.id
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("\(index + 1)" + (defaultNoteLabel(forSlot: index).map { " · \($0)" } ?? ""))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    if isAuto {
-                        Text("AVVIO")
-                            .font(.caption2.weight(.bold))
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 2)
-                            .background(RoundedRectangle(cornerRadius: 4).fill(Color.accentColor.opacity(0.2)))
-                    }
-                }
-                Text(model.displayName(of: slot))
-                    .font(.headline)
-                    .lineLimit(1)
-                Text(symbol(slot.mode) + " " + slot.mode.label + (length.map { String(format: " · %.0f batt.", $0.rounded(.up)) } ?? ""))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-            }
-            .padding(12)
-            .frame(maxWidth: .infinity, minHeight: 96, alignment: .topLeading)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(playing ? Color.green.opacity(0.25) : (pending ? Color.orange.opacity(0.25) : Color.gray.opacity(0.1)))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(selected ? Color.accentColor : (playing ? Color.green : (pending ? Color.orange : Color.clear)),
-                            lineWidth: 2)
-            )
-            .contentShape(Rectangle())
+            cardContent
         }
         .buttonStyle(.plain)
         .contextMenu {
@@ -210,6 +203,36 @@ struct SlotCard: View {
                 model.removeSelectedSlot()
             }
         }
+    }
+
+    private var cardContent: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(header).font(.caption).foregroundColor(.secondary)
+                Spacer()
+                if isAutoStart { autoStartBadge }
+            }
+            Text(model.displayName(of: slot))
+                .font(.headline)
+                .lineLimit(1)
+            Text(detail)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .lineLimit(1)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 96, alignment: .topLeading)
+        .background(RoundedRectangle(cornerRadius: 12).fill(fillColor))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(borderColor, lineWidth: 2))
+        .contentShape(Rectangle())
+    }
+
+    private var autoStartBadge: some View {
+        Text("AVVIO")
+            .font(.caption2.weight(.bold))
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(RoundedRectangle(cornerRadius: 4).fill(Color.accentColor.opacity(0.2)))
     }
 
     private func symbol(_ mode: SlotMode) -> String {
