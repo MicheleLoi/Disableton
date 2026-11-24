@@ -86,6 +86,9 @@ struct SettingsView: View {
                             Button("Mostra nel Finder") { model.showLibraryInFinder() }
                             Button("Riavvia motore MIDI") { model.startEngine() }
                         }
+                        Text("Priorità tempo reale del motore: " + ((model.snapshot?.realtimePriority ?? false) ? "ottenuta" : "non ottenuta"))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                     .padding(6)
                 } label: {

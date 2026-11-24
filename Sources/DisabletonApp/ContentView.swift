@@ -101,6 +101,11 @@ struct ConnectionBadge: View {
             Text("Uscita: \(LiveHost.virtualPortName), canale \(model.library.outputChannel)")
                 .font(.caption)
                 .foregroundColor(.secondary)
+            if let snap, !snap.realtimePriority {
+                Text("Priorità tempo reale non ottenuta")
+                    .font(.caption)
+                    .foregroundColor(.orange)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

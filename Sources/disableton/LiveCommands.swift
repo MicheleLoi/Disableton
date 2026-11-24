@@ -116,6 +116,8 @@ func runPlay(_ argv: [String]) throws {
     print("Ingresso: \(names.joined(separator: ", "))")
     print("Uscita:   porta virtuale \"\(LiveHost.virtualPortName)\", canale \(channel) — selezionala come ingresso MIDI in EZdrummer 3")
     print("Brani:    \(songs.count)")
+    Thread.sleep(forTimeInterval: 0.05)
+    print("Priorità tempo reale del motore: \(host.snapshot().realtimePriority ? "ottenuta" : "NON ottenuta")")
     for (i, slot) in (songs.first?.slots ?? []).enumerated() where !args.flag("library") {
         let note = 36 + i
         print("  \(i + 1). \(slot.name) [\(slot.mode.rawValue)] — nota \(note) (\(NoteName.korg(UInt8(note)))) sul canale 16")

@@ -19,6 +19,9 @@ Uso:
       Segue il clock del Krome e suona i groove sulla porta virtuale "Disableton".
       Opzioni: --input nome, --channel 10, --latency-ms 0, --lookahead-ms 2, --no-autostart
 
+  disableton selftest [--seconds 5] [--bpm 120]
+      Verifica senza Krome: priorità tempo reale e puntualità del ciclo di generazione.
+
   disableton library init|import|add-song|assign|show [--dir cartella]
       import <file.mid>... [--ezd] [--bars N] [--meter M] [--name X]
       add-song "Nome" [--meter 3/4]
@@ -44,6 +47,7 @@ do {
     case "ports": try runPorts()
     case "monitor": try runMonitor(rest)
     case "play": try runPlay(rest)
+    case "selftest": try runSelfTest(rest)
     case "help", "-h", "--help": print(usage)
     default:
         throw CLIError("comando sconosciuto: \(command)\n\n\(usage)")

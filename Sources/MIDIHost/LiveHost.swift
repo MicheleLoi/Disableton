@@ -14,6 +14,8 @@ public struct LiveSnapshot: Equatable {
     public var lastCommand: String?
     public var previewing: Bool
     public var learning: Bool
+    /// Il thread di generazione ha ottenuto la priorità tempo reale di macOS.
+    public var realtimePriority: Bool
 }
 
 /// Motore dal vivo completo: ingresso dal Krome, porta virtuale verso EZdrummer, thread di
@@ -35,6 +37,7 @@ public final class LiveHost {
     private var previewing = false
     private var learning = false
     private var connected: [String] = []
+    private var realtimeGranted = false
 
     public init(songs: [EngineSong], controlMap: ControlMap, outputChannel: Int,
                 settings: PlaybackController.Settings, inputFilter: String?) throws {
@@ -76,7 +79,8 @@ public final class LiveHost {
                             clockReceiving: receiving,
                             lastCommand: controller.lastCommand?.description,
                             previewing: previewing,
-                            learning: learning)
+                            learning: learning,
+                            realtimePriority: realtimeGranted)
     }
 
     /// Brani dell'ultima configurazione caricata (nell'ordine della libreria).
@@ -198,15 +202,26 @@ public final class LiveHost {
 
     private func startWorker() {
         let thread = Thread { [weak self] in
+            let granted = RealtimeThread.promoteCurrentThread(periodNs: LiveHost.cycleNs,
+                                                              computationNs: 100_000,
+                                                              constraintNs: LiveHost.cycleNs)
+            if let host = self {
+                host.lock.lock()
+                host.realtimeGranted = granted
+                host.lock.unlock()
+            }
             while true {
                 guard let host = self, host.step() else { return }
-                HostClock.wait(untilNanos: HostClock.nowNanos() + 500_000)
+                HostClock.wait(untilNanos: HostClock.nowNanos() + LiveHost.cycleNs)
             }
         }
         thread.name = "Disableton groove"
         thread.qualityOfService = .userInteractive
         thread.start()
     }
+
+    /// Periodo del thread di generazione.
+    static let cycleNs: UInt64 = 500_000
 
     private static func channelIndex(_ channel: Int) -> UInt8 {
         UInt8(min(max(channel, 1), 16) - 1)
