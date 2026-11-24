@@ -107,14 +107,24 @@ func runPlay(_ argv: [String]) throws {
     if let ms = try args.double("lookahead-ms") { performance.lookaheadMs = ms }
     let inputFilter = args.value("input") ?? (args.flag("library") ? performance.inputFilter : nil)
 
+    switch args.value("sound") {
+    case nil: break
+    case "ezdrummer": performance.soundOutput = .ezdrummer
+    case "synth": performance.soundOutput = .builtInSynth
+    case "krome": performance.soundOutput = .midiDestination
+    case let other?: throw CLIError("--sound non valido: \(other) (ammessi: ezdrummer, synth, krome)")
+    }
+    if let dest = args.value("dest") { performance.destinationFilter = dest }
+
     let host = try LiveHost(songs: songs, controlMap: controlMap, outputChannel: channel,
-                            settings: performance.playbackSettings, inputFilter: inputFilter)
+                            settings: performance.playbackSettings, inputFilter: inputFilter,
+                            output: performance.soundOutput, destinationFilter: performance.destinationFilter)
     let names = host.connectedInputs
     guard !names.isEmpty else { throw noSourceError(inputFilter) }
     if let n = try args.int("song") { host.perform(.selectSong(n - 1)) }
 
     print("Ingresso: \(names.joined(separator: ", "))")
-    print("Uscita:   porta virtuale \"\(LiveHost.virtualPortName)\", canale \(channel) — selezionala come ingresso MIDI in EZdrummer 3")
+    print("Uscita:   \(host.snapshot().outputDescription), canale \(channel)")
     print("Brani:    \(songs.count)")
     Thread.sleep(forTimeInterval: 0.05)
     print("Priorità tempo reale del motore: \(host.snapshot().realtimePriority ? "ottenuta" : "NON ottenuta")")

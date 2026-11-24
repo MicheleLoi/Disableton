@@ -42,8 +42,14 @@ public final class MIDIBackend {
 
     private var client = MIDIClientRef()
     private var inputPort = MIDIPortRef()
+    private var outputPort = MIDIPortRef()
     private var virtualSource = MIDIEndpointRef()
+    private var virtualDestination = MIDIEndpointRef()
     private var connected: [MIDIEndpointRef] = []
+    private var destinations: [MIDIEndpointRef] = []
+
+    /// Se false, `send` non usa la porta virtuale (le note vanno solo alle destinazioni).
+    public var sendsToVirtualSource = true
 
     /// Chiamato sul thread di CoreMIDI con il messaggio e il suo istante (ns).
     public var onMessage: ((MIDIMessage, UInt64) -> Void)?
@@ -55,6 +61,33 @@ public final class MIDIBackend {
             self?.receive(list)
         }
         guard status == noErr else { throw MIDIBackendError(status: status, call: "MIDIInputPortCreate") }
+        status = MIDIOutputPortCreate(client, "\(clientName) Out" as CFString, &outputPort)
+        guard status == noErr else { throw MIDIBackendError(status: status, call: "MIDIOutputPortCreate") }
+    }
+
+    /// Imposta le destinazioni MIDI esterne il cui nome contiene `filter` (nil = nessuna).
+    /// Restituisce i nomi trovati.
+    @discardableResult
+    public func setDestinations(matching filter: String?) -> [String] {
+        destinations.removeAll()
+        guard let filter, !filter.isEmpty else { return [] }
+        var names: [String] = []
+        for d in MIDIBackend.destinations where d.ref != virtualDestination {
+            if d.name.localizedCaseInsensitiveContains(filter) {
+                destinations.append(d.ref)
+                names.append(d.name)
+            }
+        }
+        return names
+    }
+
+    /// Crea una destinazione virtuale (es. un "Krome simulato" nei test): i messaggi ricevuti
+    /// arrivano a `onMessage` come quelli delle sorgenti collegate.
+    public func createVirtualDestination(named name: String) throws {
+        let status = MIDIDestinationCreateWithProtocol(client, name as CFString, ._1_0, &virtualDestination) { [weak self] list, _ in
+            self?.receive(list)
+        }
+        guard status == noErr else { throw MIDIBackendError(status: status, call: "MIDIDestinationCreate") }
     }
 
     public static var sources: [Endpoint] {
@@ -108,14 +141,18 @@ public final class MIDIBackend {
 
     /// Invia un messaggio dalla porta virtuale con timestamp (ns, 0 = subito).
     public func send(_ message: MIDIMessage, atNanos time: UInt64) {
-        guard virtualSource != 0, let word = UMP.word(for: message) else { return }
+        let toVirtual = sendsToVirtualSource && virtualSource != 0
+        guard toVirtual || !destinations.isEmpty, let word = UMP.word(for: message) else { return }
         var w = word
         let timestamp: MIDITimeStamp = time == 0 ? 0 : HostClock.host(fromNanos: time)
         var list = MIDIEventList()
         withUnsafeMutablePointer(to: &list) { listPointer in
             let packet = MIDIEventListInit(listPointer, ._1_0)
             _ = MIDIEventListAdd(listPointer, MemoryLayout<MIDIEventList>.size, packet, timestamp, 1, &w)
-            _ = MIDIReceivedEventList(virtualSource, listPointer)
+            if toVirtual { _ = MIDIReceivedEventList(virtualSource, listPointer) }
+            for destination in destinations {
+                _ = MIDISendEventList(outputPort, destination, listPointer)
+            }
         }
     }
 
@@ -135,6 +172,8 @@ public final class MIDIBackend {
 
     deinit {
         if virtualSource != 0 { MIDIEndpointDispose(virtualSource) }
+        if virtualDestination != 0 { MIDIEndpointDispose(virtualDestination) }
+        if outputPort != 0 { MIDIPortDispose(outputPort) }
         if inputPort != 0 { MIDIPortDispose(inputPort) }
         if client != 0 { MIDIClientDispose(client) }
     }

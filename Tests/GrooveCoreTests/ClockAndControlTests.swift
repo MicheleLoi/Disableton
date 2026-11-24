@@ -64,6 +64,24 @@ final class ClockFollowerTests: XCTestCase {
         XCTAssertEqual(f.lastSongTick, 48 * 40)
     }
 
+    func testPauseWithoutClockDoesNotSkewTiming() {
+        let f = ClockFollower()
+        let t0: UInt64 = 1_000_000_000
+        f.start()
+        for i in 0..<48 { f.clock(at: t0 + UInt64(i) * clock120) }
+        f.stop()
+        f.setSongPosition(sixteenths: 32)
+        f.continuePlayback()
+        let t1 = t0 + 3_000_000_000 // ripartenza dopo una pausa senza clock
+        f.clock(at: t1)
+        XCTAssertEqual(f.lastSongTick, 32 * 6 * 40)
+        XCTAssertEqual(f.tempoBPM!, 120, accuracy: 0.01)
+        let next = f.time(forSongTick: Double(32 * 6 * 40 + 960))!
+        XCTAssertEqual(Double(next), Double(t1 + 24 * clock120), accuracy: 50_000)
+        for i in 1..<10 { f.clock(at: t1 + UInt64(i) * clock120) }
+        XCTAssertEqual(f.tempoBPM!, 120, accuracy: 0.01)
+    }
+
     func testRecoversMissedClocks() {
         var config = ClockFollower.Configuration()
         config.recoverMissedClocks = true

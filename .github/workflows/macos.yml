@@ -48,6 +48,16 @@ jobs:
       - name: 9. Priorità tempo reale e puntualità del ciclo
         run: dist/disableton selftest --seconds 5
 
+      - name: 10. Catena MIDI completa (Krome simulato → Disableton → EZdrummer simulato)
+        run: |
+          dist/disableton e2e --bpm 120
+          dist/disableton e2e --bpm 87
+
+      - name: 11. Brani dimostrativi e libreria
+        run: |
+          dist/disableton demo --dir "$RUNNER_TEMP/libreria"
+          dist/disableton library show --dir "$RUNNER_TEMP/libreria"
+
       - uses: actions/upload-artifact@v4
         with:
           name: Disableton-macOS

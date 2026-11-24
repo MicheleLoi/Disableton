@@ -17,10 +17,17 @@ Uso:
   disableton play --loop a.mid [--loop b.mid] [--fill f.mid] [--ending e.mid] [--meter 4/4]
   disableton play --library [--dir cartella] [--song N]
       Segue il clock del Krome e suona i groove sulla porta virtuale "Disableton".
-      Opzioni: --input nome, --channel 10, --latency-ms 0, --lookahead-ms 2, --no-autostart
+      Opzioni: --input nome, --channel 10, --latency-ms 0, --lookahead-ms 2, --no-autostart,
+               --sound ezdrummer|synth|krome (--dest nome della destinazione MIDI, predefinito KROME)
 
   disableton selftest [--seconds 5] [--bpm 120]
       Verifica senza Krome: priorità tempo reale e puntualità del ciclo di generazione.
+
+  disableton e2e [--bpm 120]
+      Prova della catena completa con un Krome e un EZdrummer simulati (porte virtuali).
+
+  disableton demo [--dir cartella] | demo --export cartella
+      Aggiunge brani e groove dimostrativi alla libreria, oppure li scrive come file .mid.
 
   disableton library init|import|add-song|assign|show [--dir cartella]
       import <file.mid>... [--ezd] [--bars N] [--meter M] [--name X]
@@ -48,6 +55,8 @@ do {
     case "monitor": try runMonitor(rest)
     case "play": try runPlay(rest)
     case "selftest": try runSelfTest(rest)
+    case "e2e": try runEndToEnd(rest)
+    case "demo": try runDemo(rest)
     case "help", "-h", "--help": print(usage)
     default:
         throw CLIError("comando sconosciuto: \(command)\n\n\(usage)")

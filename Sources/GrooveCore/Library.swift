@@ -113,6 +113,16 @@ public struct SongRecord: Codable, Identifiable, Equatable, Sendable {
     }
 }
 
+/// Dove vanno le note della batteria.
+public enum SoundOutput: String, Codable, Sendable, CaseIterable {
+    /// Porta virtuale "Disableton", da selezionare come ingresso in EZdrummer 3.
+    case ezdrummer
+    /// Sintetizzatore General MIDI integrato in macOS (suoni di prova).
+    case builtInSynth
+    /// Una destinazione MIDI esterna, per esempio il Krome con un kit di batteria.
+    case midiDestination
+}
+
 /// Impostazioni di esecuzione salvate con la libreria.
 public struct PerformanceSettings: Codable, Equatable, Sendable {
     /// Parte del nome della sorgente MIDI da ascoltare (nil = tutte).
@@ -121,20 +131,40 @@ public struct PerformanceSettings: Codable, Equatable, Sendable {
     public var latencyMs: Double
     /// Anticipo di programmazione degli eventi (ms).
     public var lookaheadMs: Double
+    /// Destinazione del suono.
+    public var soundOutput: SoundOutput
+    /// Parte del nome della destinazione MIDI esterna (per `midiDestination`).
+    public var destinationFilter: String?
+    /// Tempo del clock interno (prove senza Krome e ascolto).
+    public var internalBPM: Double
 
-    public init(inputFilter: String? = nil, latencyMs: Double = 0, lookaheadMs: Double = 2) {
+    public init(inputFilter: String? = nil, latencyMs: Double = 0, lookaheadMs: Double = 2,
+                soundOutput: SoundOutput = .ezdrummer, destinationFilter: String? = "KROME",
+                internalBPM: Double = 120) {
         self.inputFilter = inputFilter
         self.latencyMs = latencyMs
         self.lookaheadMs = lookaheadMs
+        self.soundOutput = soundOutput
+        self.destinationFilter = destinationFilter
+        self.internalBPM = internalBPM
     }
 
-    enum CodingKeys: String, CodingKey { case inputFilter, latencyMs, lookaheadMs }
+    enum CodingKeys: String, CodingKey {
+        case inputFilter, latencyMs, lookaheadMs, soundOutput, destinationFilter, internalBPM
+    }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         inputFilter = try c.decodeIfPresent(String.self, forKey: .inputFilter)
         latencyMs = try c.decodeIfPresent(Double.self, forKey: .latencyMs) ?? 0
         lookaheadMs = try c.decodeIfPresent(Double.self, forKey: .lookaheadMs) ?? 2
+        soundOutput = try c.decodeIfPresent(SoundOutput.self, forKey: .soundOutput) ?? .ezdrummer
+        if c.contains(.destinationFilter) {
+            destinationFilter = try c.decodeIfPresent(String.self, forKey: .destinationFilter)
+        } else {
+            destinationFilter = "KROME"
+        }
+        internalBPM = try c.decodeIfPresent(Double.self, forKey: .internalBPM) ?? 120
     }
 
     public var playbackSettings: PlaybackController.Settings {

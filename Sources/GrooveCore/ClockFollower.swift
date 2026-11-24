@@ -80,13 +80,17 @@ public final class ClockFollower {
     public func clock(at time: UInt64) {
         if let last = window.last {
             let gap = time > last.time ? time - last.time : 0
-            if gap > configuration.maxGapRecoveryNs {
-                window.removeAll()
-            } else if configuration.recoverMissedClocks, isRunning, songBase != nil,
-                      let f = fit, Double(gap) > 1.75 * f.nsPerClock {
-                // Impulsi persi: si recuperano per non far restare indietro la posizione.
-                let missed = Int((Double(gap) / f.nsPerClock).rounded()) - 1
-                if missed > 0 { counter += missed }
+            let interval = fit?.nsPerClock ?? 60_000_000_000.0 / (configuration.defaultBPM * Double(ClockFollower.clocksPerQuarter))
+            if Double(gap) > 1.75 * interval {
+                if configuration.recoverMissedClocks, isRunning, songBase != nil, gap <= configuration.maxGapRecoveryNs {
+                    // Impulsi persi: si recuperano per non far restare indietro la posizione.
+                    let missed = Int((Double(gap) / interval).rounded()) - 1
+                    if missed > 0 { counter += missed }
+                } else {
+                    // Pausa del clock (es. Stop senza clock a trasporto fermo) o salto di tempo:
+                    // la stima riparte dai nuovi impulsi, mantenendo l'ultimo tempo noto.
+                    window.removeAll()
+                }
             }
         }
         counter += 1

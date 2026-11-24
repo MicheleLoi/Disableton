@@ -1,0 +1,55 @@
+import XCTest
+@testable import GrooveCore
+
+final class DemoAndWriterTests: XCTestCase {
+    func testWriterRoundTrip() throws {
+        for groove in DemoContent.grooves() {
+            let file = try MIDIFile(data: groove.midiData())
+            XCTAssertEqual(file.ticksPerQuarter, Groove.ppq)
+            XCTAssertEqual(file.timeSignature, groove.timeSignature, groove.name)
+            XCTAssertEqual(file.tempoBPM ?? 0, 120, accuracy: 0.01)
+            let back = try Groove(midiFile: file, name: groove.name)
+            XCTAssertEqual(back.lengthTicks, groove.lengthTicks, groove.name)
+            XCTAssertEqual(back.events, groove.events, groove.name)
+        }
+    }
+
+    func testVLQ() {
+        XCTAssertEqual(MIDIFileWriter.vlq(0), [0x00])
+        XCTAssertEqual(MIDIFileWriter.vlq(127), [0x7F])
+        XCTAssertEqual(MIDIFileWriter.vlq(128), [0x81, 0x00])
+        XCTAssertEqual(MIDIFileWriter.vlq(0x0FFFFFFF), [0xFF, 0xFF, 0xFF, 0x7F])
+    }
+
+    func testDemoSongsAreComplete() {
+        let songs = DemoContent.engineSongs()
+        XCTAssertEqual(songs.count, DemoContent.songs.count)
+        for (song, template) in zip(songs, DemoContent.songs) {
+            XCTAssertEqual(song.slots.count, template.slots.count, song.name)
+            for slot in song.slots {
+                XCTAssertEqual(slot.groove.timeSignature, song.timeSignature, "\(song.name): \(slot.name)")
+                XCTAssertGreaterThan(slot.groove.noteOnCount, 0)
+            }
+        }
+    }
+
+    func testInstallDemoContentIsIdempotent() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try LibraryStore(root: root)
+        XCTAssertEqual(try store.installDemoContent(), DemoContent.songs.count)
+        XCTAssertEqual(try store.installDemoContent(), 0)
+        XCTAssertEqual(store.library.grooves.count, DemoContent.grooves().count)
+        let songs = try store.engineSongs()
+        XCTAssertEqual(songs[0].slots.map { $0.mode }, [.loop, .loop, .oneShotReturn, .oneShotStop])
+        XCTAssertEqual(songs[0].autoStartSlot, 0)
+    }
+
+    func testOldSettingsDecodeWithDefaults() throws {
+        let json = #"{"inputFilter":"KROME","latencyMs":3}"#
+        let s = try JSONDecoder().decode(PerformanceSettings.self, from: Data(json.utf8))
+        XCTAssertEqual(s.soundOutput, .ezdrummer)
+        XCTAssertEqual(s.destinationFilter, "KROME")
+        XCTAssertEqual(s.internalBPM, 120)
+    }
+}
