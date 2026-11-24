@@ -53,23 +53,26 @@ public struct GrooveRecord: Codable, Identifiable, Equatable, Sendable {
     }
 }
 
-public struct SlotRecord: Codable, Equatable, Sendable {
+public struct SlotRecord: Codable, Identifiable, Equatable, Sendable {
+    public var id: UUID
     public var name: String?
     public var grooveID: UUID
     public var mode: SlotMode
     public var quantize: Quantize
 
-    public init(name: String? = nil, grooveID: UUID, mode: SlotMode = .loop, quantize: Quantize = .bar) {
+    public init(id: UUID = UUID(), name: String? = nil, grooveID: UUID, mode: SlotMode = .loop, quantize: Quantize = .bar) {
+        self.id = id
         self.name = name
         self.grooveID = grooveID
         self.mode = mode
         self.quantize = quantize
     }
 
-    enum CodingKeys: String, CodingKey { case name, grooveID, mode, quantize }
+    enum CodingKeys: String, CodingKey { case id, name, grooveID, mode, quantize }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         name = try c.decodeIfPresent(String.self, forKey: .name)
         grooveID = try c.decode(UUID.self, forKey: .grooveID)
         mode = try c.decodeIfPresent(SlotMode.self, forKey: .mode) ?? .loop
@@ -110,6 +113,38 @@ public struct SongRecord: Codable, Identifiable, Equatable, Sendable {
     }
 }
 
+/// Impostazioni di esecuzione salvate con la libreria.
+public struct PerformanceSettings: Codable, Equatable, Sendable {
+    /// Parte del nome della sorgente MIDI da ascoltare (nil = tutte).
+    public var inputFilter: String?
+    /// Anticipo della batteria per compensare la latenza audio (ms).
+    public var latencyMs: Double
+    /// Anticipo di programmazione degli eventi (ms).
+    public var lookaheadMs: Double
+
+    public init(inputFilter: String? = nil, latencyMs: Double = 0, lookaheadMs: Double = 2) {
+        self.inputFilter = inputFilter
+        self.latencyMs = latencyMs
+        self.lookaheadMs = lookaheadMs
+    }
+
+    enum CodingKeys: String, CodingKey { case inputFilter, latencyMs, lookaheadMs }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        inputFilter = try c.decodeIfPresent(String.self, forKey: .inputFilter)
+        latencyMs = try c.decodeIfPresent(Double.self, forKey: .latencyMs) ?? 0
+        lookaheadMs = try c.decodeIfPresent(Double.self, forKey: .lookaheadMs) ?? 2
+    }
+
+    public var playbackSettings: PlaybackController.Settings {
+        var s = PlaybackController.Settings()
+        s.latencyCompensationNs = UInt64(max(0, latencyMs) * 1_000_000)
+        s.lookaheadNs = UInt64(max(0.1, lookaheadMs) * 1_000_000)
+        return s
+    }
+}
+
 public struct Library: Codable, Equatable, Sendable {
     public var formatVersion: Int
     public var grooves: [GrooveRecord]
@@ -117,17 +152,20 @@ public struct Library: Codable, Equatable, Sendable {
     public var controlMap: ControlMap
     /// Canale MIDI verso EZdrummer, 1-16.
     public var outputChannel: Int
+    public var performance: PerformanceSettings
 
     public init(grooves: [GrooveRecord] = [], songs: [SongRecord] = [],
-                controlMap: ControlMap = .default, outputChannel: Int = 10) {
+                controlMap: ControlMap = .default, outputChannel: Int = 10,
+                performance: PerformanceSettings = PerformanceSettings()) {
         self.formatVersion = 1
         self.grooves = grooves
         self.songs = songs
         self.controlMap = controlMap
         self.outputChannel = outputChannel
+        self.performance = performance
     }
 
-    enum CodingKeys: String, CodingKey { case formatVersion, grooves, songs, controlMap, outputChannel }
+    enum CodingKeys: String, CodingKey { case formatVersion, grooves, songs, controlMap, outputChannel, performance }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -136,6 +174,7 @@ public struct Library: Codable, Equatable, Sendable {
         songs = try c.decodeIfPresent([SongRecord].self, forKey: .songs) ?? []
         controlMap = try c.decodeIfPresent(ControlMap.self, forKey: .controlMap) ?? .default
         outputChannel = try c.decodeIfPresent(Int.self, forKey: .outputChannel) ?? 10
+        performance = try c.decodeIfPresent(PerformanceSettings.self, forKey: .performance) ?? PerformanceSettings()
     }
 
     public func groove(named name: String) -> GrooveRecord? {
@@ -165,6 +204,8 @@ public enum LibraryError: Error, CustomStringConvertible {
 public final class LibraryStore {
     public let root: URL
     public var library: Library
+
+    private var grooveCache: [UUID: (record: GrooveRecord, groove: Groove)] = [:]
 
     public var libraryURL: URL { root.appendingPathComponent("library.json") }
     public var groovesDirectory: URL { root.appendingPathComponent("grooves", isDirectory: true) }
@@ -198,40 +239,54 @@ public final class LibraryStore {
     @discardableResult
     public func importGroove(from url: URL, name: String? = nil, source: GrooveSource,
                              lengthBars: Int? = nil, timeSignature: TimeSignature? = nil) throws -> GrooveRecord {
-        let data = try Data(contentsOf: url)
-        let grooveName = name ?? url.deletingPathExtension().lastPathComponent
+        try importGroove(data: try Data(contentsOf: url), name: name ?? url.deletingPathExtension().lastPathComponent,
+                         source: source, lengthBars: lengthBars, timeSignature: timeSignature)
+    }
+
+    /// Importa un groove dal contenuto di un file MIDI.
+    @discardableResult
+    public func importGroove(data: Data, name: String, source: GrooveSource,
+                             lengthBars: Int? = nil, timeSignature: TimeSignature? = nil) throws -> GrooveRecord {
         let options = GrooveImportOptions(lengthBars: lengthBars, timeSignature: timeSignature)
-        _ = try Groove(midiFile: MIDIFile(data: data), name: grooveName, options: options)
+        _ = try Groove(midiFile: MIDIFile(data: data), name: name, options: options)
         let id = UUID()
         let fileName = "\(id.uuidString).mid"
         try data.write(to: groovesDirectory.appendingPathComponent(fileName), options: .atomic)
-        let record = GrooveRecord(id: id, name: grooveName, fileName: fileName, source: source,
+        let record = GrooveRecord(id: id, name: library.uniqueGrooveName(name), fileName: fileName, source: source,
                                   lengthBars: lengthBars, timeSignature: timeSignature)
         library.grooves.append(record)
         return record
     }
 
+    /// Elimina un groove, i suoi slot nei brani e il file copiato.
+    public func deleteGroove(id: UUID) throws {
+        guard let record = library.groove(id: id) else { return }
+        library.removeGroove(id: id)
+        grooveCache[id] = nil
+        let url = groovesDirectory.appendingPathComponent(record.fileName)
+        if FileManager.default.fileExists(atPath: url.path) {
+            try FileManager.default.removeItem(at: url)
+        }
+    }
+
+    /// Groove pronto per la riproduzione (in cache finché il record non cambia).
     public func loadGroove(_ record: GrooveRecord) throws -> Groove {
-        try Groove(contentsOf: groovesDirectory.appendingPathComponent(record.fileName),
-                   name: record.name, options: record.importOptions)
+        if let cached = grooveCache[record.id], cached.record == record { return cached.groove }
+        let groove = try Groove(contentsOf: groovesDirectory.appendingPathComponent(record.fileName),
+                                name: record.name, options: record.importOptions)
+        grooveCache[record.id] = (record, groove)
+        return groove
     }
 
     /// Brani pronti per il motore, con tutti i groove caricati in memoria.
     public func engineSongs() throws -> [EngineSong] {
-        var cache: [UUID: Groove] = [:]
-        return try library.songs.map { song in
+        try library.songs.map { song in
             let slots = try song.slots.map { slot -> EngineSlot in
                 guard let record = library.groove(id: slot.grooveID) else {
                     throw LibraryError.missingGroove(song: song.name, id: slot.grooveID)
                 }
-                let groove: Groove
-                if let cached = cache[record.id] {
-                    groove = cached
-                } else {
-                    groove = try loadGroove(record)
-                    cache[record.id] = groove
-                }
-                return EngineSlot(name: slot.name ?? record.name, groove: groove, mode: slot.mode, quantize: slot.quantize)
+                return EngineSlot(name: slot.name ?? record.name, groove: try loadGroove(record),
+                                  mode: slot.mode, quantize: slot.quantize)
             }
             return EngineSong(name: song.name, timeSignature: song.timeSignature, slots: slots,
                               autoStartSlot: song.autoStartSlot)

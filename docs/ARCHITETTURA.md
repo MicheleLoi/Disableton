@@ -21,21 +21,31 @@
 ## Moduli
 
 ```
-GrooveCore
+GrooveCore (nessuna dipendenza da macOS, testato anche su Linux)
   MIDIMessage        messaggi MIDI 1.0, conversione UMP (CoreMIDI moderno), nomi delle note
   MIDIFile           lettore di Standard MIDI File (formato 0 e 1)
   Groove             groove a 960 PPQ: import, taglio delle battute vuote, lunghezza, mappa note
   ClockFollower      stima di tempo e fase dal clock (regressione su 24 impulsi), SPP, Continue
+  ClockGenerator     clock interno per ascoltare i groove senza il Krome
   GrooveEngine       motore musicale: loop, fill con ritorno, cambi quantizzati, note sospese
   ControlMap         comandi MIDI → azioni (predefiniti sul canale 16), MIDI Learn
   PlaybackController collega clock, comandi e motore; produce messaggi con l'istante di invio
-  Library            libreria persistente (JSON + copie dei file MIDI)
+  Library            libreria persistente (JSON + copie dei file MIDI), impostazioni
+  LibraryEditing     modifiche usate dall'interfaccia (brani, slot, groove di avvio)
 
-disableton (solo macOS per le parti MIDI)
+MIDIHost (solo macOS)
   CoreMIDIBackend    ingresso dal Krome, porta virtuale verso EZdrummer, orologio di sistema
-  LiveCommands       monitor, play (thread di generazione ogni 0,5 ms)
-  InspectCommand, LibraryCommand
+  LiveHost           motore dal vivo: thread di generazione ogni 0,5 ms, ascolto, MIDI Learn
+
+DisabletonApp (SwiftUI, macOS 12+)
+  AppModel           stato dell'app: salva ogni modifica e la passa al motore
+  Viste              Palco, Brani, Groove, Comandi MIDI, Impostazioni
+
+disableton (riga di comando)
+  inspect, ports, monitor, play, library
 ```
+
+L'interfaccia è volutamente sottile: tutta la logica verificabile sta in `GrooveCore`.
 
 ## Temporizzazione
 

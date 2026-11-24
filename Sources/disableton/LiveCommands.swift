@@ -4,8 +4,7 @@ import GrooveCore
 #if canImport(CoreMIDI)
 import CoreMIDI
 import Darwin
-
-let virtualPortName = "Disableton"
+import MIDIHost
 
 /// `disableton ports`: elenca sorgenti e destinazioni MIDI.
 func runPorts() throws {
@@ -76,12 +75,14 @@ func runPlay(_ argv: [String]) throws {
     let songs: [EngineSong]
     var controlMap = ControlMap.default
     var channel = try args.int("channel") ?? 10
+    var performance = PerformanceSettings()
 
     if args.flag("library") {
         let root = args.value("dir").map { URL(fileURLWithPath: $0, isDirectory: true) } ?? LibraryStore.defaultRoot
         let store = try LibraryStore(root: root)
         songs = try store.engineSongs()
         controlMap = store.library.controlMap
+        performance = store.library.performance
         if args.value("channel") == nil { channel = store.library.outputChannel }
         guard !songs.isEmpty else { throw CLIError("la libreria in \(root.path) non contiene brani") }
     } else {
@@ -102,74 +103,40 @@ func runPlay(_ argv: [String]) throws {
                             autoStartSlot: args.flag("no-autostart") ? nil : 0)]
     }
     guard (1...16).contains(channel) else { throw CLIError("--channel deve essere tra 1 e 16") }
+    if let ms = try args.double("latency-ms") { performance.latencyMs = ms }
+    if let ms = try args.double("lookahead-ms") { performance.lookaheadMs = ms }
+    let inputFilter = args.value("input") ?? (args.flag("library") ? performance.inputFilter : nil)
 
-    var settings = PlaybackController.Settings()
-    if let ms = try args.double("latency-ms") { settings.latencyCompensationNs = UInt64(max(0, ms) * 1_000_000) }
-    if let ms = try args.double("lookahead-ms") { settings.lookaheadNs = UInt64(max(0.1, ms) * 1_000_000) }
-
-    let backend = try MIDIBackend(clientName: "Disableton")
-    try backend.createVirtualSource(named: virtualPortName)
-
-    let controller = PlaybackController(songs: songs, controlMap: controlMap, outputChannel: UInt8(channel - 1),
-                                        settings: settings) { message, time in
-        backend.send(message, atNanos: time)
-    }
-    if let n = try args.int("song") { controller.selectSong(n - 1) }
-
-    let lock = NSLock()
-    controller.onStatusChange = { status in
-        let line = describe(status)
-        DispatchQueue.main.async { print(line) }
-    }
-    backend.onMessage = { message, time in
-        lock.lock()
-        controller.handle(message, at: time, now: HostClock.nowNanos())
-        lock.unlock()
-    }
-
-    let names = try backend.connectSources(matching: args.value("input"))
-    guard !names.isEmpty else { throw noSourceError(args.value("input")) }
+    let host = try LiveHost(songs: songs, controlMap: controlMap, outputChannel: channel,
+                            settings: performance.playbackSettings, inputFilter: inputFilter)
+    let names = host.connectedInputs
+    guard !names.isEmpty else { throw noSourceError(inputFilter) }
+    if let n = try args.int("song") { host.perform(.selectSong(n - 1)) }
 
     print("Ingresso: \(names.joined(separator: ", "))")
-    print("Uscita:   porta virtuale \"\(virtualPortName)\", canale \(channel) — selezionala come ingresso MIDI in EZdrummer 3")
-    print("Brani:    \(songs.count); slot del brano corrente:")
-    if let song = controller.engine.song {
-        for (i, slot) in song.slots.enumerated() {
-            let note = 36 + i
-            print("  \(i + 1). \(slot.name) [\(slot.mode.rawValue)] — nota \(note) (\(NoteName.korg(UInt8(note)))) sul canale 16")
-        }
+    print("Uscita:   porta virtuale \"\(LiveHost.virtualPortName)\", canale \(channel) — selezionala come ingresso MIDI in EZdrummer 3")
+    print("Brani:    \(songs.count)")
+    for (i, slot) in (songs.first?.slots ?? []).enumerated() where !args.flag("library") {
+        let note = 36 + i
+        print("  \(i + 1). \(slot.name) [\(slot.mode.rawValue)] — nota \(note) (\(NoteName.korg(UInt8(note)))) sul canale 16")
     }
     print("Avvia il sequencer del Krome. Ctrl-C per uscire.\n")
 
-    PerformanceGuard.begin(reason: "Riproduzione groove sincronizzata al Krome")
-
-    // Thread di generazione: ogni 0,5 ms prepara gli eventi dei prossimi millisecondi.
-    let worker = Thread {
-        while true {
-            let now = HostClock.nowNanos()
-            lock.lock()
-            controller.process(now: now)
-            lock.unlock()
-            HostClock.wait(untilNanos: now + 500_000)
-        }
-    }
-    worker.qualityOfService = .userInteractive
-    worker.start()
-
-    // Riga di stato a ogni battuta.
+    // Riga di stato a ogni cambio e a ogni battuta.
+    var lastStatus: PlaybackStatus?
     var lastBar: Int?
     let timer = DispatchSource.makeTimerSource(queue: .main)
     timer.schedule(deadline: .now(), repeating: .milliseconds(100))
     timer.setEventHandler {
-        lock.lock()
-        let bar = controller.currentBar
-        let bpm = controller.tempoBPM
-        let status = controller.status
-        lock.unlock()
-        guard let bar, bar != lastBar else { return }
+        let snap = host.snapshot()
+        if snap.status != lastStatus {
+            lastStatus = snap.status
+            print(describe(snap.status))
+        }
+        guard let bar = snap.bar, bar != lastBar else { return }
         lastBar = bar
-        let tempo = bpm.map { String(format: "%.1f BPM", $0) } ?? "-"
-        print("  battuta \(bar)  \(tempo)  \(status.playingSlotName ?? "silenzio")")
+        let tempo = snap.tempoBPM.map { String(format: "%.1f BPM", $0) } ?? "-"
+        print("  battuta \(bar)  \(tempo)  \(snap.status.playingSlotName ?? "silenzio")")
     }
     timer.resume()
 
@@ -177,15 +144,13 @@ func runPlay(_ argv: [String]) throws {
     signal(SIGINT, SIG_IGN)
     let sigint = DispatchSource.makeSignalSource(signal: SIGINT, queue: .main)
     sigint.setEventHandler {
-        lock.lock()
-        for m in controller.engine.panic() { backend.send(m, atNanos: 0) }
-        lock.unlock()
+        host.shutdown()
         print("\nUscita.")
         exit(0)
     }
     sigint.resume()
 
-    withExtendedLifetime((backend, timer, sigint)) {
+    withExtendedLifetime((host, timer, sigint)) {
         RunLoop.main.run()
     }
 }

@@ -13,18 +13,49 @@ Le scelte di progetto sono descritte in [docs/ARCHITETTURA.md](docs/ARCHITETTURA
 
 | Parte | Stato |
 |---|---|
-| Nucleo (`GrooveCore`): file MIDI, groove, inseguimento del clock, motore groove/fill, comandi, libreria | compila; 34 test superati (su Linux); da confermare su Mac |
-| Riga di comando (`disableton`): `inspect`, `ports`, `monitor`, `play`, `library` | `inspect` e `library` provati; `ports`, `monitor`, `play` (CoreMIDI) **da compilare e provare su Mac con il Krome** |
-| Interfaccia grafica (SwiftUI) | da fare, dopo le verifiche della Fase 0 |
+| Nucleo (`GrooveCore`): file MIDI, groove, clock, motore groove/fill, comandi, libreria, modifica della libreria, MIDI Learn, clock interno per l'ascolto | compila; 47 test superati |
+| Livello MIDI di macOS (`MIDIHost`): ingresso dal Krome, porta virtuale, thread di generazione | verificato in compilazione su GitHub (macOS); **da provare con il Krome** |
+| App (`DisabletonApp`, SwiftUI): Palco, Brani, Groove, Comandi MIDI, Impostazioni | verificata in compilazione su GitHub; **da provare sul Mac** |
+| Riga di comando (`disableton`): `inspect`, `ports`, `monitor`, `play`, `library` | come sopra |
+
+Ogni modifica pubblicata viene verificata automaticamente su un Mac di GitHub (vedi
+`.github/workflows/macos.yml`), in ordine: nucleo → MIDI → riga di comando → app → test →
+app universale. Il primo passo che fallisce ferma i successivi.
 
 ## Requisiti
 
-- macOS 13 o successivo, Intel o Apple Silicon
-- Xcode 15 o successivo, oppure i Command Line Tools (`xcode-select --install`)
+- macOS 12 Monterey o successivo, Intel o Apple Silicon
 - EZdrummer 3 (applicazione autonoma)
 - Korg Krome collegato via USB (oppure con un'interfaccia MIDI a 5 poli)
+- Solo per compilare da sé: Xcode 14 o successivo (su Monterey: Xcode 14.2)
 
-## Compilazione
+## Scaricare l'app già pronta
+
+1. Su GitHub apri la scheda **Actions** del repository → l'ultima esecuzione riuscita di **macOS**.
+2. In fondo, sotto **Artifacts**, scarica **Disableton-macOS** e scompattalo: contiene
+   `Disableton.zip` (l'app) e `disableton-cli.zip` (la riga di comando).
+3. Scompatta `Disableton.zip` e sposta **Disableton.app** in Applicazioni.
+4. Al primo avvio macOS avvisa che lo sviluppatore non è identificato (l'app non è firmata con un
+   certificato Apple): clic destro su Disableton.app → **Apri** → **Apri**. Solo la prima volta.
+
+## L'app
+
+- **Palco**: brano corrente, groove che suona, groove in coda, battuta, tempo, stato del clock.
+  Pulsanti di emergenza col mouse (brano, groove, fill, silenzio, panic).
+- **Brani**: elenco dei brani (il numero corrisponde al Program Change dal Krome: brano 1 = PC 0),
+  metro, groove assegnati con comportamento (ripetuto, fill con ritorno, una volta poi il
+  successivo, finale), momento del cambio (battito, battuta, fine groove) e groove di avvio.
+- **Groove**: importazione con il pulsante o trascinando i file `.mid` (dal Finder o da
+  EZdrummer 3), lunghezza, metro, note contenute, **ascolto** con EZdrummer 3 a un tempo a scelta
+  anche senza il Krome.
+- **Comandi MIDI**: associazioni tra controlli del Krome e azioni, con **Impara** (MIDI Learn).
+- **Impostazioni**: sorgente MIDI, canale verso EZdrummer 3, anticipo della batteria, cartella
+  della libreria.
+
+Ogni modifica viene salvata subito. Se il Krome sta suonando, le modifiche ai brani diventano
+effettive allo Stop, per non disturbare l'esecuzione.
+
+## Compilazione (facoltativa)
 
 ```sh
 git clone https://github.com/MicheleLoi/Disableton.git
@@ -32,10 +63,11 @@ cd Disableton
 git checkout ccr-900483bd-tiua7z
 swift build -c release
 swift test
+scripts/build-app.sh        # crea dist/Disableton.app universale
 ```
 
-Il programma compilato si trova in `.build/release/disableton`. Negli esempi seguenti è
-abbreviato in `disableton`. Per usarlo così: `alias disableton=$PWD/.build/release/disableton`.
+Il programma a riga di comando si trova in `.build/release/disableton` (o in `dist/`). Negli
+esempi seguenti è abbreviato in `disableton`.
 
 ## Fase 0: verifiche con il Krome
 

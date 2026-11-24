@@ -1,0 +1,54 @@
+# Verifica su macOS, in ordine logico: ogni passo parte solo se il precedente è riuscito.
+name: macOS
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verifica:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Strumenti
+        run: |
+          sw_vers
+          swift --version
+
+      - name: 1. Nucleo (GrooveCore)
+        run: swift build --target GrooveCore
+
+      - name: 2. Livello MIDI di macOS (CoreMIDI)
+        run: swift build --target MIDIHost
+
+      - name: 3. Riga di comando
+        run: swift build --product disableton
+
+      - name: 4. App (SwiftUI)
+        run: swift build --product DisabletonApp
+
+      - name: 5. Test
+        run: swift test
+
+      - name: 6. App universale Intel + Apple Silicon per macOS 12+
+        run: scripts/build-app.sh
+
+      - name: 7. Controllo compatibilità con macOS 12
+        run: |
+          otool -l dist/Disableton.app/Contents/MacOS/Disableton | grep -A4 -E "LC_BUILD_VERSION|LC_VERSION_MIN_MACOSX" | grep -E "minos|version" | head -4
+
+      - name: 8. Avvio di prova della riga di comando
+        run: |
+          dist/disableton help | head -3
+          dist/disableton ports
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Disableton-macOS
+          path: |
+            dist/Disableton.zip
+            dist/disableton-cli.zip
+          retention-days: 30

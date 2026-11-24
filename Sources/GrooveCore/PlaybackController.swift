@@ -38,8 +38,16 @@ public final class PlaybackController {
     /// Invio di un messaggio all'istante indicato (ns).
     public var output: (MIDIMessage, UInt64) -> Void
     public var onStatusChange: ((PlaybackStatus) -> Void)?
-    /// Messaggi non associati ad alcun comando (utile per il MIDI Learn).
+    /// Messaggi non associati ad alcun comando.
     public var onUnmappedMessage: ((MIDIMessage) -> Void)?
+    /// MIDI Learn: se impostato, il prossimo Note On / CC / Program Change viene passato qui
+    /// invece di essere eseguito, e la cattura si disattiva.
+    public var learnCapture: ((MIDIMessage) -> Void)?
+
+    /// Istante dell'ultimo impulso di clock ricevuto.
+    public private(set) var lastClockTime: UInt64?
+    /// Ultimo messaggio di comando ricevuto (non clock), per la visualizzazione.
+    public private(set) var lastCommand: MIDIMessage?
 
     private var lastStatus: PlaybackStatus?
 
@@ -63,8 +71,23 @@ public final class PlaybackController {
         return tick / ts.ticksPerBar(ppq: Groove.ppq) + 1
     }
 
+    /// Sostituisce i brani. Durante l'esecuzione il brano corrente continua invariato e i nuovi
+    /// brani diventano effettivi allo Stop (o alla prossima selezione di un brano).
     public func replaceSongs(_ songs: [EngineSong]) {
         self.songs = songs
+        if engine.isRunning {
+            reloadPending = true
+            if let i = currentSongIndex, !songs.indices.contains(i) { currentSongIndex = songs.isEmpty ? nil : songs.count - 1 }
+        } else {
+            reloadCurrentSong()
+        }
+        notifyIfNeeded()
+    }
+
+    private var reloadPending = false
+
+    private func reloadCurrentSong() {
+        reloadPending = false
         if let i = currentSongIndex, songs.indices.contains(i) {
             selectSong(i)
         } else if !songs.isEmpty {
@@ -72,7 +95,6 @@ public final class PlaybackController {
         } else {
             currentSongIndex = nil
         }
-        notifyIfNeeded()
     }
 
     // MARK: - Ingresso
@@ -81,6 +103,7 @@ public final class PlaybackController {
         switch message {
         case .timingClock:
             follower.clock(at: time)
+            lastClockTime = time
         case .start:
             follower.start()
             engine.transportStarted(at: 0)
@@ -91,12 +114,18 @@ public final class PlaybackController {
         case .stop:
             follower.stop()
             for m in engine.transportStopped() { output(m, now) }
+            if reloadPending { reloadCurrentSong() }
         case let .songPosition(beats):
             follower.setSongPosition(sixteenths: Int(beats))
         case .activeSensing:
             break
         default:
-            if let action = controlMap.action(for: message) {
+            if let capture = learnCapture, ControlBinding.learn(from: message, action: .fill) != nil {
+                learnCapture = nil
+                lastCommand = message
+                capture(message)
+            } else if let action = controlMap.action(for: message) {
+                lastCommand = message
                 perform(action, now: now)
             } else {
                 onUnmappedMessage?(message)
@@ -123,6 +152,7 @@ public final class PlaybackController {
 
     public func selectSong(_ index: Int) {
         guard songs.indices.contains(index) else { return }
+        reloadPending = false
         currentSongIndex = index
         engine.load(song: songs[index])
     }

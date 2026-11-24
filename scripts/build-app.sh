@@ -1,0 +1,49 @@
+#!/bin/bash
+# Crea dist/Disableton.app (universale: Intel + Apple Silicon, macOS 12+) e dist/disableton (riga di comando).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+VERSION="${VERSION:-0.1.0}"
+BUILD="${BUILD:-1}"
+ARCHS=(--arch arm64 --arch x86_64)
+
+swift build -c release "${ARCHS[@]}" --product DisabletonApp
+swift build -c release "${ARCHS[@]}" --product disableton
+BIN_DIR="$(swift build -c release "${ARCHS[@]}" --show-bin-path)"
+
+APP=dist/Disableton.app
+rm -rf dist
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+cp "$BIN_DIR/DisabletonApp" "$APP/Contents/MacOS/Disableton"
+cp "$BIN_DIR/disableton" dist/disableton
+
+cat > "$APP/Contents/Info.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key><string>Disableton</string>
+    <key>CFBundleDisplayName</key><string>Disableton</string>
+    <key>CFBundleIdentifier</key><string>app.disableton.Disableton</string>
+    <key>CFBundleExecutable</key><string>Disableton</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleShortVersionString</key><string>${VERSION}</string>
+    <key>CFBundleVersion</key><string>${BUILD}</string>
+    <key>LSMinimumSystemVersion</key><string>12.0</string>
+    <key>LSApplicationCategoryType</key><string>public.app-category.music</string>
+    <key>NSHighResolutionCapable</key><true/>
+    <key>NSPrincipalClass</key><string>NSApplication</string>
+    <key>NSHumanReadableCopyright</key><string>Disableton</string>
+</dict>
+</plist>
+PLIST
+
+# Firma locale (ad hoc): sufficiente per l'uso personale, non per la distribuzione.
+codesign --force --sign - "$APP"
+codesign --force --sign - dist/disableton
+
+(cd dist && ditto -c -k --keepParent Disableton.app Disableton.zip && zip -q disableton-cli.zip disableton)
+
+echo "Creati:"
+lipo -info "$APP/Contents/MacOS/Disableton"
+lipo -info dist/disableton
