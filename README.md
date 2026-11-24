@@ -13,9 +13,10 @@ Le scelte di progetto sono descritte in [docs/ARCHITETTURA.md](docs/ARCHITETTURA
 
 | Parte | Stato |
 |---|---|
-| Nucleo (`GrooveCore`): file MIDI, groove, clock, motore groove/fill, comandi, libreria, modifica della libreria, MIDI Learn, clock interno per l'ascolto | compila; 47 test superati |
+| Nucleo (`GrooveCore`): file MIDI, groove, clock, motore groove/fill, comandi, libreria, modifica della libreria, MIDI Learn, clock interno per l'ascolto | compila; 53 test superati |
 | Livello MIDI di macOS (`MIDIHost`): ingresso dal Krome, porta virtuale, thread di generazione | verificato in compilazione su GitHub (macOS); **da provare con il Krome** |
-| App (`DisabletonApp`, SwiftUI): Palco, Brani, Groove, Comandi MIDI, Impostazioni | verificata in compilazione su GitHub; **da provare sul Mac** |
+| App (`DisabletonApp`, SwiftUI): Preparazione, Comandi, Palco, Impostazioni | compilata e avviata su GitHub (con schermate); **da provare sul Mac** |
+| Catena MIDI completa (Krome simulato → Disableton → EZdrummer simulato) | verificata su GitHub a 120 e 87 BPM: note e tempi corretti |
 | Riga di comando (`disableton`): `inspect`, `ports`, `monitor`, `play`, `library` | come sopra |
 
 Ogni modifica pubblicata viene verificata automaticamente su un Mac di GitHub (vedi
@@ -40,20 +41,39 @@ app universale. Il primo passo che fallisce ferma i successivi.
 
 ## L'app
 
-- **Palco**: brano corrente, groove che suona, groove in coda, battuta, tempo, stato del clock.
-  Pulsanti di emergenza col mouse (brano, groove, fill, silenzio, panic).
-- **Brani**: elenco dei brani (il numero corrisponde al Program Change dal Krome: brano 1 = PC 0),
-  metro, groove assegnati con comportamento (ripetuto, fill con ritorno, una volta poi il
-  successivo, finale), momento del cambio (battito, battuta, fine groove) e groove di avvio.
-- **Groove**: importazione con il pulsante o trascinando i file `.mid` (dal Finder o da
-  EZdrummer 3), lunghezza, metro, note contenute, **ascolto** con EZdrummer 3 a un tempo a scelta
-  anche senza il Krome.
-- **Comandi MIDI**: associazioni tra controlli del Krome e azioni, con **Impara** (MIDI Learn).
-- **Impostazioni**: sorgente MIDI, canale verso EZdrummer 3, anticipo della batteria, cartella
-  della libreria.
+Tre viste, scelte in alto (**Preparazione · Comandi · Palco**), più le **Impostazioni**
+(ingranaggio, oppure ⌘,):
+
+- **Preparazione**: scaletta dei brani (il numero corrisponde al Program Change dal Krome:
+  brano 1 = PC 0), i groove del brano in ordine, la libreria (ricerca, filtro, importazione,
+  ascolto) e il pannello dello slot selezionato: groove, comportamento (ripetuto, fill con
+  ritorno, una volta poi il successivo, finale), momento del cambio, groove di avvio, tasto del
+  Krome con **Impara**. I groove si aggiungono trascinandoli dalla libreria o con il "+".
+- **Comandi**: la zona C2–B3 del Krome disegnata come tastiera, con lo stato di ogni tasto
+  (suona, in coda, groove del brano, comando); clic su un tasto per cambiarne l'azione o
+  reimpararlo; gli altri controlli (SW1, SW2, pedale, Program Change).
+- **Palco**: schermata scura leggibile a 2–3 metri: brano, groove che suona, prossimo groove,
+  battuta, battiti, tempo, brano successivo. Esc torna alla Preparazione; ⌃⌘F schermo intero.
+- **Impostazioni**: ingresso dal Krome, clock interno per provare senza Krome, destinazione del
+  suono, canale, anticipo della batteria, cartella della libreria, brani dimostrativi.
 
 Ogni modifica viene salvata subito. Se il Krome sta suonando, le modifiche ai brani diventano
 effettive allo Stop, per non disturbare l'esecuzione.
+
+## Provare tutto senza EZdrummer 3
+
+1. Apri l'app → Impostazioni → **Aggiungi brani dimostrativi** (rock, funk, shuffle, fill,
+   finale, valzer, 6/8, generati dal programma).
+2. Impostazioni → Suono della batteria → **Sintetizzatore integrato di macOS** (gratuito, già
+   presente su ogni Mac), oppure **Kit di batteria del Krome** (una traccia del Krome con un kit
+   di batteria che riceve sul canale 10).
+3. Senza Krome: Impostazioni → Clock → **Avvia** (clock interno). Con il Krome: avvia il suo
+   sequencer (GLOBAL → MIDI → MIDI Clock = Internal).
+4. Prova cambi di groove, fill e brani dalla tastiera del Krome (canale 16, vedi la vista
+   Comandi) o con un clic nella Preparazione.
+
+Quando avrai EZdrummer 3 basterà scegliere "EZdrummer 3" come destinazione del suono e abilitare
+l'ingresso "Disableton" nelle sue impostazioni MIDI.
 
 ## Compilazione (facoltativa)
 
