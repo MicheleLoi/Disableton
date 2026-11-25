@@ -30,7 +30,7 @@ Uso:
       Aggiunge brani e groove dimostrativi alla libreria, oppure li scrive come file .mid.
 
   disableton library init|import|add-song|assign|show [--dir cartella]
-      import <file.mid>... [--ezd] [--bars N] [--meter M] [--name X]
+      import <file.mid>... [--bars N] [--meter M] [--name X]
       add-song "Nome" [--meter 3/4]
       assign <n. brano> <nome groove> [--mode loop|fill|next|ending] [--quantize beat|bar|end]
 

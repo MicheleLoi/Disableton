@@ -30,10 +30,6 @@ struct GrooveDetailView: View {
                     }
 
                     Form {
-                        Picker("Provenienza", selection: model.grooveBinding(grooveID, \.source, fallback: .user)) {
-                            Text(GrooveSource.ezdrummer.label).tag(GrooveSource.ezdrummer)
-                            Text(GrooveSource.user.label).tag(GrooveSource.user)
-                        }
                         Picker("Lunghezza", selection: model.grooveBinding(grooveID, \.lengthBars, fallback: nil)) {
                             Text("Automatica").tag(Int?.none)
                             ForEach(1...16, id: \.self) { n in

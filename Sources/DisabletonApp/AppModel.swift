@@ -251,14 +251,14 @@ final class AppModel: ObservableObject {
 
     // MARK: - Import
 
-    func importFiles(_ urls: [URL], source: GrooveSource) {
+    func importFiles(_ urls: [URL]) {
         guard let store else { return }
         var failures: [String] = []
         for url in urls {
             let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             do {
-                try store.importGroove(from: url, source: source)
+                try store.importGroove(from: url, source: .user)
             } catch {
                 failures.append("\(url.lastPathComponent): \(error)")
             }
@@ -270,10 +270,10 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func importData(_ data: Data, name: String, source: GrooveSource) {
+    func importData(_ data: Data, name: String) {
         guard let store else { return }
         do {
-            try store.importGroove(data: data, name: name, source: source)
+            try store.importGroove(data: data, name: name, source: .user)
             library = store.library
         } catch {
             errorMessage = "\(name): \(error)"
@@ -281,7 +281,7 @@ final class AppModel: ObservableObject {
     }
 
     /// File trascinati dal Finder o da EZdrummer 3.
-    func handleFileDrop(_ providers: [NSItemProvider], source: GrooveSource) -> Bool {
+    func handleFileDrop(_ providers: [NSItemProvider]) -> Bool {
         var accepted = false
         for provider in providers {
             if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
@@ -294,14 +294,14 @@ final class AppModel: ObservableObject {
                         url = direct
                     }
                     guard let fileURL = url else { return }
-                    DispatchQueue.main.async { self.importFiles([fileURL], source: source) }
+                    DispatchQueue.main.async { self.importFiles([fileURL]) }
                 }
             } else if provider.hasItemConformingToTypeIdentifier(UTType.midi.identifier) {
                 accepted = true
                 let name = provider.suggestedName ?? "Groove"
                 provider.loadDataRepresentation(forTypeIdentifier: UTType.midi.identifier) { data, _ in
                     guard let data else { return }
-                    DispatchQueue.main.async { self.importData(data, name: name, source: source) }
+                    DispatchQueue.main.async { self.importData(data, name: name) }
                 }
             }
         }

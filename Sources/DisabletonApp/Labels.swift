@@ -22,15 +22,6 @@ extension Quantize {
     }
 }
 
-extension GrooveSource {
-    var label: String {
-        switch self {
-        case .ezdrummer: return "EZdrummer 3"
-        case .user: return "Personale"
-        }
-    }
-}
-
 extension ControlAction {
     var label: String {
         switch self {

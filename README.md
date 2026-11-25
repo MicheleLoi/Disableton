@@ -173,7 +173,7 @@ esempio).
 
 ```sh
 disableton library init
-disableton library import --ezd ~/Desktop/Strofa.mid ~/Desktop/Ritornello.mid ~/Desktop/Fill.mid
+disableton library import ~/Desktop/Strofa.mid ~/Desktop/Ritornello.mid ~/Desktop/Fill.mid
 disableton library add-song "Primo brano"
 disableton library assign 1 Strofa
 disableton library assign 1 Ritornello

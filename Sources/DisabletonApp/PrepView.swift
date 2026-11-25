@@ -275,17 +275,13 @@ struct SlotCard: View {
 struct LibraryStrip: View {
     @EnvironmentObject var model: AppModel
     @State private var search = ""
-    @State private var filter: GrooveSource?
     @State private var showImporter = false
-    @State private var importAsEZdrummer = true
     @State private var fileDropTargeted = false
 
     private var filtered: [GrooveRecord] {
         let query = search.trimmingCharacters(in: .whitespaces)
-        return model.library.grooves.filter { record in
-            (filter == nil || record.source == filter)
-                && (query.isEmpty || record.name.localizedCaseInsensitiveContains(query))
-        }
+        guard !query.isEmpty else { return model.library.grooves }
+        return model.library.grooves.filter { $0.name.localizedCaseInsensitiveContains(query) }
     }
 
     var body: some View {
@@ -296,10 +292,6 @@ struct LibraryStrip: View {
                     .lineLimit(1)
                     .fixedSize()
                 Spacer(minLength: 8)
-                Toggle("Da EZdrummer 3", isOn: $importAsEZdrummer)
-                    .toggleStyle(.checkbox)
-                    .fixedSize()
-                    .help("Provenienza assegnata ai file importati")
                 Button("Importa .mid…") { showImporter = true }
                     .fixedSize()
             }
@@ -307,14 +299,6 @@ struct LibraryStrip: View {
                 TextField("Cerca", text: $search)
                     .textFieldStyle(.roundedBorder)
                     .frame(minWidth: 120, maxWidth: 220)
-                Picker("Provenienza", selection: $filter) {
-                    Text("Tutti").tag(GrooveSource?.none)
-                    Text("EZdrummer 3").tag(GrooveSource?.some(.ezdrummer))
-                    Text("Personali").tag(GrooveSource?.some(.user))
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
                 Spacer(minLength: 0)
             }
 
@@ -340,12 +324,12 @@ struct LibraryStrip: View {
                 .opacity(fileDropTargeted ? 1 : 0)
         )
         .onDrop(of: [UTType.fileURL, UTType.midi], isTargeted: $fileDropTargeted) { providers in
-            model.handleFileDrop(providers, source: importAsEZdrummer ? .ezdrummer : .user)
+            model.handleFileDrop(providers)
         }
         .fileImporter(isPresented: $showImporter, allowedContentTypes: [UTType.midi], allowsMultipleSelection: true) { result in
             switch result {
             case let .success(urls):
-                model.importFiles(urls, source: importAsEZdrummer ? .ezdrummer : .user)
+                model.importFiles(urls)
             case let .failure(error):
                 model.errorMessage = error.localizedDescription
             }
@@ -394,8 +378,7 @@ struct GrooveChip: View {
 
     private func subtitle(_ groove: Groove?) -> String {
         guard let groove else { return "file non leggibile" }
-        var parts = [String(format: "%.0f batt.", groove.lengthBars.rounded(.up)), groove.timeSignature.description]
-        if record.source == .ezdrummer { parts.append("EZD") }
+        let parts = [String(format: "%.0f batt.", groove.lengthBars.rounded(.up)), groove.timeSignature.description]
         return parts.joined(separator: " · ")
     }
 }

@@ -4,7 +4,7 @@ import GrooveCore
 /// Gestione della libreria da riga di comando (in attesa dell'interfaccia grafica).
 func runLibrary(_ argv: [String]) throws {
     guard let sub = argv.first else { throw CLIError("specificare un sottocomando: init, import, add-song, assign, show") }
-    let args = try Args(Array(argv.dropFirst()), flags: ["ezd"])
+    let args = try Args(Array(argv.dropFirst()))
     let root = args.value("dir").map { URL(fileURLWithPath: $0, isDirectory: true) } ?? LibraryStore.defaultRoot
     let store = try LibraryStore(root: root)
 
@@ -15,11 +15,10 @@ func runLibrary(_ argv: [String]) throws {
 
     case "import":
         guard !args.positionals.isEmpty else { throw CLIError("indicare uno o più file .mid") }
-        let source: GrooveSource = args.flag("ezd") ? .ezdrummer : .user
         let single = args.positionals.count == 1
         for path in args.positionals {
             let url = URL(fileURLWithPath: path)
-            let record = try store.importGroove(from: url, name: single ? args.value("name") : nil, source: source,
+            let record = try store.importGroove(from: url, name: single ? args.value("name") : nil, source: .user,
                                                 lengthBars: try args.int("bars"),
                                                 timeSignature: try args.timeSignature("meter"))
             let groove = try store.loadGroove(record)
@@ -70,7 +69,7 @@ where T.RawValue == String {
 func printLibrary(_ library: Library) {
     print("Groove (\(library.grooves.count)):")
     for g in library.grooves {
-        print("  - \(g.name) [\(g.source.rawValue)]\(g.lengthBars.map { ", \($0) battute" } ?? "")")
+        print("  - \(g.name)\(g.lengthBars.map { ", \($0) battute" } ?? "")")
     }
     print("\nBrani (\(library.songs.count)):")
     for (i, song) in library.songs.enumerated() {
