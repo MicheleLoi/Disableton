@@ -15,10 +15,12 @@ let package = Package(
         .target(name: "GrooveCore"),
         // Livello MIDI di macOS (CoreMIDI): ingresso dal Krome, porta virtuale, thread di generazione.
         .target(name: "MIDIHost", dependencies: ["GrooveCore"]),
-        // Strumento a riga di comando: ispezione file, libreria, monitor MIDI, riproduzione.
-        .executableTarget(name: "disableton", dependencies: ["GrooveCore", "MIDIHost"]),
+        // Groove di prova per test e verifiche: non fa parte dell'app.
+        .target(name: "TestMaterial", dependencies: ["GrooveCore"]),
+        // Strumento a riga di comando: ispezione file, libreria, monitor MIDI, riproduzione, prove.
+        .executableTarget(name: "disableton", dependencies: ["GrooveCore", "MIDIHost", "TestMaterial"]),
         // App con interfaccia grafica (SwiftUI).
         .executableTarget(name: "DisabletonApp", dependencies: ["GrooveCore", "MIDIHost"]),
-        .testTarget(name: "GrooveCoreTests", dependencies: ["GrooveCore"]),
+        .testTarget(name: "GrooveCoreTests", dependencies: ["GrooveCore", "TestMaterial"]),
     ]
 )

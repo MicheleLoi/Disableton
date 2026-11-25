@@ -146,7 +146,6 @@ struct SettingsView: View {
             Text(model.libraryFolder.path).font(.callout).textSelection(.enabled)
             HStack {
                 Button("Mostra nel Finder") { model.showLibraryInFinder() }
-                Button("Aggiungi brani dimostrativi") { model.installDemo() }
                 Button("Riavvia motore MIDI") { model.startEngine() }
             }
             Text(engineLine).font(.caption).foregroundColor(.secondary)

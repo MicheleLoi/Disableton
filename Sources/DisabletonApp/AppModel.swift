@@ -213,6 +213,14 @@ final class AppModel: ObservableObject {
         selectedSlotID = nil
     }
 
+    func moveSelectedSong(by delta: Int) {
+        guard let index = selectedSongIndex else { return }
+        let target = index + delta
+        guard library.songs.indices.contains(target) else { return }
+        library.moveSongs(fromOffsets: IndexSet(integer: index), toOffset: delta > 0 ? target + 1 : target)
+        log.log("Brano spostato: \(index + 1) → \(target + 1)")
+    }
+
     func deleteSong(_ id: UUID) {
         guard let index = library.songIndex(id: id) else { return }
         library.removeSongs(atOffsets: IndexSet(integer: index))
@@ -239,19 +247,6 @@ final class AppModel: ObservableObject {
         guard let s = selectedSongIndex, let k = selectedSlotIndex else { return }
         library.removeSlots(fromSong: s, atOffsets: IndexSet(integer: k))
         selectedSlotID = nil
-    }
-
-    func installDemo() {
-        guard let store else { return }
-        do {
-            let added = try store.installDemoContent()
-            library = store.library
-            log.log("Brani dimostrativi aggiunti: \(added)")
-            if selectedSongID == nil { selectedSongID = library.songs.first?.id }
-            if added == 0 { errorMessage = "I brani dimostrativi sono già presenti." }
-        } catch {
-            errorMessage = "\(error)"
-        }
     }
 
     // MARK: - Import

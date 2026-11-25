@@ -66,7 +66,7 @@ jobs:
           dist/disableton e2e --bpm 120
           dist/disableton e2e --bpm 87
 
-      - name: 11. Brani dimostrativi e libreria
+      - name: 11. Groove di prova e libreria (strumento di sviluppo)
         run: |
           dist/disableton demo --dir "$RUNNER_TEMP/libreria"
           dist/disableton library show --dir "$RUNNER_TEMP/libreria"
@@ -116,6 +116,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION=0.1.${{ github.run_number }}
+          dist/disableton demo --export "dist/Groove di prova" > /dev/null
+          (cd dist && zip -qr Groove-di-prova.zip "Groove di prova")
           git log -1 --format='%s%n%n%b' | grep -v -E '^(Co-Authored-By|Claude-Session):' > "$RUNNER_TEMP/note.md"
-          gh release create "v$VERSION" dist/Disableton.zip dist/disableton-cli.zip \
+          gh release create "v$VERSION" dist/Disableton.zip dist/disableton-cli.zip dist/Groove-di-prova.zip \
             --title "Disableton $VERSION" --notes-file "$RUNNER_TEMP/note.md" --target "$GITHUB_SHA" --latest

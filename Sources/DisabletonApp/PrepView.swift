@@ -31,17 +31,14 @@ struct PrepView: View {
 
 struct SetlistColumn: View {
     @EnvironmentObject var model: AppModel
+    @State private var confirmDelete = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("Scaletta").font(.headline)
-                Spacer()
-                Button { model.addSong() } label: { Image(systemName: "plus") }
-                    .help("Nuovo brano")
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            Text("Scaletta")
+                .font(.headline)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
 
             if model.library.songs.isEmpty {
                 Text("Nessun brano.")
@@ -77,11 +74,45 @@ struct SetlistColumn: View {
                     }
                 }
             }
-            Text("Brano n = Program Change n−1 dal Krome. Trascina per riordinare.")
+            Divider()
+            HStack(spacing: 6) {
+                Button { model.addSong() } label: { Image(systemName: "plus") }
+                    .help("Nuovo brano")
+                    .accessibilityLabel("Nuovo brano")
+                Button { confirmDelete = true } label: { Image(systemName: "minus") }
+                    .disabled(model.selectedSongIndex == nil)
+                    .help("Elimina il brano selezionato")
+                    .accessibilityLabel("Elimina il brano selezionato")
+                Spacer()
+                Button { model.moveSelectedSong(by: -1) } label: { Image(systemName: "arrow.up") }
+                    .disabled((model.selectedSongIndex ?? 0) == 0)
+                    .help("Sposta su (il numero di Program Change cambia di conseguenza)")
+                    .accessibilityLabel("Sposta il brano su")
+                Button { model.moveSelectedSong(by: 1) } label: { Image(systemName: "arrow.down") }
+                    .disabled(model.selectedSongIndex.map { $0 >= model.library.songs.count - 1 } ?? true)
+                    .help("Sposta giù (il numero di Program Change cambia di conseguenza)")
+                    .accessibilityLabel("Sposta il brano giù")
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            Text("Brano n = Program Change n−1 dal Krome.")
                 .font(.caption)
                 .foregroundColor(.secondary)
-                .padding(12)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 10)
         }
+        .confirmationDialog(deleteTitle, isPresented: $confirmDelete) {
+            Button("Elimina", role: .destructive) {
+                if let id = model.selectedSongID { model.deleteSong(id) }
+            }
+        } message: {
+            Text("I groove restano nella libreria. I brani successivi scalano di un numero (e di un Program Change).")
+        }
+    }
+
+    private var deleteTitle: String {
+        guard let i = model.selectedSongIndex else { return "Eliminare il brano?" }
+        return "Eliminare il brano \(i + 1) «\(model.library.songs[i].name)»?"
     }
 }
 
@@ -136,13 +167,9 @@ struct SongSequence: View {
                 .padding(20)
             }
         } else {
-            VStack(spacing: 10) {
-                Text("Seleziona un brano nella scaletta, o creane uno con +").foregroundColor(.secondary)
-                if model.library.songs.isEmpty {
-                    Button("Aggiungi brani dimostrativi") { model.installDemo() }
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            Text("Seleziona un brano nella scaletta, o creane uno con +")
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }

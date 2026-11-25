@@ -1,5 +1,6 @@
 import Foundation
 import GrooveCore
+import TestMaterial
 
 #if canImport(CoreMIDI)
 import Darwin
@@ -15,7 +16,7 @@ func runEndToEnd(_ argv: [String]) throws {
     let bpm = try args.double("bpm") ?? 120
     let nsPerClock = 60_000_000_000.0 / (bpm * 24)
     let nsPerTick = nsPerClock / Double(ClockFollower.songTicksPerClock)
-    let songs = DemoContent.engineSongs()
+    let songs = TestGrooves.engineSongs()
 
     // Scenario, in impulsi di clock (24 per quarto, 96 per battuta in 4/4).
     let selectSong = MIDIMessage.programChange(channel: 15, program: 0)     // brano 1: Demo 1 – Rock

@@ -59,8 +59,8 @@ Il registro degli eventi è in `~/Library/Logs/Disableton/Disableton.log`.
 Tre viste, scelte in alto (**Preparazione · Comandi · Palco**), più le **Impostazioni**
 (ingranaggio, oppure ⌘,):
 
-- **Preparazione**: scaletta dei brani (il numero corrisponde al Program Change dal Krome:
-  brano 1 = PC 0), i groove del brano in ordine, la libreria (ricerca, filtro, importazione,
+- **Preparazione**: scaletta dei brani con i pulsanti + − ↑ ↓ (il numero corrisponde al Program
+  Change dal Krome: brano 1 = PC 0), i groove del brano in ordine, la libreria (ricerca, filtro, importazione,
   ascolto) e il pannello dello slot selezionato: groove, comportamento (ripetuto, fill con
   ritorno, una volta poi il successivo, finale), momento del cambio, groove di avvio, tasto del
   Krome con **Impara**. I groove si aggiungono trascinandoli dalla libreria o con il "+".
@@ -70,22 +70,22 @@ Tre viste, scelte in alto (**Preparazione · Comandi · Palco**), più le **Impo
 - **Palco**: schermata scura leggibile a 2–3 metri: brano, groove che suona, prossimo groove,
   battuta, battiti, tempo, brano successivo. Esc torna alla Preparazione; ⌃⌘F schermo intero.
 - **Impostazioni**: ingresso dal Krome, clock interno per provare senza Krome, destinazione del
-  suono, canale, anticipo della batteria, cartella della libreria, brani dimostrativi.
+  suono, canale, anticipo della batteria, cartella della libreria, assistenza e aggiornamenti.
 
 Ogni modifica viene salvata subito. Se il Krome sta suonando, le modifiche ai brani diventano
 effettive allo Stop, per non disturbare l'esecuzione.
 
 ## Provare tutto senza EZdrummer 3
 
-1. Apri l'app → Impostazioni → **Aggiungi brani dimostrativi** (rock, funk, shuffle, fill,
-   finale, valzer, 6/8, generati dal programma).
-2. Impostazioni → Suono della batteria → **Sintetizzatore integrato di macOS** (gratuito, già
-   presente su ogni Mac), oppure **Kit di batteria del Krome** (una traccia del Krome con un kit
-   di batteria che riceve sul canale 10).
-3. Senza Krome: Impostazioni → Clock → **Avvia** (clock interno). Con il Krome: avvia il suo
-   sequencer (GLOBAL → MIDI → MIDI Clock = Internal).
-4. Prova cambi di groove, fill e brani dalla tastiera del Krome (canale 16, vedi la vista
-   Comandi) o con un clic nella Preparazione.
+Guida passo passo: [docs/PROVA-SENZA-KROME.md](docs/PROVA-SENZA-KROME.md). In breve:
+
+1. Scarica i file MIDI di prova (non fanno parte dell'app):
+   https://github.com/MicheleLoi/Disableton/releases/latest/download/Groove-di-prova.zip
+2. Importali con **Importa .mid…** e prepara qualche brano nella Preparazione.
+3. Impostazioni → Suono della batteria → **Sintetizzatore integrato di macOS** (gratuito) oppure
+   **Kit di batteria del Krome**.
+4. Senza Krome: Impostazioni → Clock → **Avvia**. Con il Krome: avvia il suo sequencer
+   (GLOBAL → MIDI → MIDI Clock = Internal).
 
 Quando avrai EZdrummer 3 basterà scegliere "EZdrummer 3" come destinazione del suono e abilitare
 l'ingresso "Disableton" nelle sue impostazioni MIDI.

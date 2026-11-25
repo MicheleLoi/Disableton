@@ -1,8 +1,9 @@
 import Foundation
+import GrooveCore
 
-/// Groove e brani dimostrativi generati dal programma (note General MIDI, canale 10),
-/// per provare tutto senza EZdrummer né file esterni.
-public enum DemoContent {
+/// Groove di prova generati in modo deterministico (note General MIDI, canale 10).
+/// Materiale per i test e per la verifica su GitHub: non fa parte dell'app.
+public enum TestGrooves {
     public struct SongTemplate {
         public let name: String
         public let timeSignature: TimeSignature
@@ -156,12 +157,12 @@ public enum DemoContent {
 }
 
 extension LibraryStore {
-    /// Aggiunge groove e brani dimostrativi che non sono già presenti (per nome).
-    /// Restituisce il numero di brani aggiunti.
+    /// Aggiunge groove e brani di prova che non sono già presenti (per nome).
+    /// Restituisce il numero di brani aggiunti. Solo per test e strumenti di sviluppo.
     @discardableResult
-    public func installDemoContent() throws -> Int {
+    public func installTestGrooves() throws -> Int {
         var ids: [String: UUID] = [:]
-        for groove in DemoContent.grooves() {
+        for groove in TestGrooves.grooves() {
             if let existing = library.groove(named: groove.name) {
                 ids[groove.name] = existing.id
             } else {
@@ -170,7 +171,7 @@ extension LibraryStore {
             }
         }
         var added = 0
-        for template in DemoContent.songs where !library.songs.contains(where: { $0.name == template.name }) {
+        for template in TestGrooves.songs where !library.songs.contains(where: { $0.name == template.name }) {
             let songID = library.addSong(name: template.name, timeSignature: template.timeSignature)
             guard let index = library.songIndex(id: songID) else { continue }
             for slot in template.slots {
