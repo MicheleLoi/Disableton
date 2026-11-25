@@ -6,6 +6,15 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Una nuova modifica annulla la verifica precedente ancora in corso o in coda.
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: true
+
+# Necessario per pubblicare le release.
+permissions:
+  contents: write
+
 jobs:
   verifica:
     runs-on: macos-15
@@ -34,6 +43,10 @@ jobs:
         run: swift test
 
       - name: 6. App universale Intel + Apple Silicon per macOS 12+
+        env:
+          VERSION: 0.1.${{ github.run_number }}
+          BUILD: ${{ github.run_number }}
+          COMMIT: ${{ github.sha }}
         run: scripts/build-app.sh
 
       - name: 7. Controllo compatibilità con macOS 12
@@ -61,6 +74,7 @@ jobs:
       - name: 12. Avvio dell'app e schermate di ogni vista
         run: |
           dist/disableton demo > /dev/null
+          export DISABLETON_AUTOMATION=1
           mkdir -p "$RUNNER_TEMP/schermate"
           for MODE in prep commands stage settings; do
             if [ "$MODE" = settings ]; then
@@ -95,3 +109,13 @@ jobs:
             dist/Disableton.zip
             dist/disableton-cli.zip
           retention-days: 30
+
+      - name: 13. Pubblica la versione (release "latest")
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=0.1.${{ github.run_number }}
+          git log -1 --format='%s%n%n%b' | grep -v -E '^(Co-Authored-By|Claude-Session):' > "$RUNNER_TEMP/note.md"
+          gh release create "v$VERSION" dist/Disableton.zip dist/disableton-cli.zip \
+            --title "Disableton $VERSION" --notes-file "$RUNNER_TEMP/note.md" --target "$GITHUB_SHA" --latest

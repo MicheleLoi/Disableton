@@ -38,7 +38,19 @@ final class AppModel: ObservableObject {
     @Published private(set) var availableDestinations: [String] = []
     @Published private(set) var connectedInputs: [String] = []
     @Published private(set) var engineRunning = false
-    @Published var errorMessage: String?
+    @Published var errorMessage: String? {
+        didSet {
+            if let message = errorMessage, message != oldValue { log.log("Errore mostrato: \(message)") }
+        }
+    }
+    @Published var showReport = false
+    @Published var reportReason: String?
+    @Published var reportCrashExcerpt: String?
+    @Published var updateState: Updater.State = .idle
+
+    /// Registro degli eventi (~/Library/Logs/Disableton/Disableton.log).
+    let log = EventLog(fileURL: EventLog.defaultURL)
+    var lastLoggedSnapshot: LiveSnapshot?
     @Published private(set) var learningTarget: LearnTarget?
     @Published private(set) var previewingGrooveID: UUID?
     @Published var previewBPM: Double = 100
@@ -68,8 +80,21 @@ final class AppModel: ObservableObject {
         let environment = ProcessInfo.processInfo.environment
         if let raw = environment["DISABLETON_MODE"], let initial = AppMode(rawValue: raw) { mode = initial }
         if environment["DISABLETON_SETTINGS"] == "1" { showSettings = true }
+        logStartup()
         refreshPorts()
         startEngine()
+        // Nella verifica automatica (schermate) niente avvisi né controlli in rete.
+        let automated = environment["DISABLETON_AUTOMATION"] == "1"
+        if !automated { checkPreviousSession() }
+        NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil,
+                                               queue: .main) { [weak self] _ in
+            self?.applicationWillTerminate()
+        }
+        if !automated {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+                self?.checkForUpdates(userInitiated: false)
+            }
+        }
     }
 
     var libraryFolder: URL { store?.root ?? LibraryStore.defaultRoot }
@@ -90,6 +115,7 @@ final class AppModel: ObservableObject {
             host = newHost
             connectedInputs = newHost.connectedInputs
             engineRunning = true
+            log.log("Motore MIDI avviato · ingressi: \(connectedInputs.isEmpty ? "nessuno" : connectedInputs.joined(separator: ", ")) · uscita: \(newHost.snapshot().outputDescription)")
         } catch {
             engineRunning = false
             errorMessage = "Il motore MIDI non è partito: \(error)"
@@ -103,7 +129,11 @@ final class AppModel: ObservableObject {
             return
         }
         let s = host.snapshot()
-        if s != snapshot { snapshot = s }
+        if s != snapshot {
+            logChanges(from: lastLoggedSnapshot, to: s)
+            lastLoggedSnapshot = s
+            snapshot = s
+        }
     }
 
     private func libraryChanged(from old: Library) {
@@ -124,7 +154,12 @@ final class AppModel: ObservableObject {
         }
         if library.performance.soundOutput != old.performance.soundOutput
             || library.performance.destinationFilter != old.performance.destinationFilter {
-            host.configureOutput(library.performance.soundOutput, destinationFilter: library.performance.destinationFilter)
+            let description = host.configureOutput(library.performance.soundOutput,
+                                                   destinationFilter: library.performance.destinationFilter)
+            log.log("Uscita del suono: \(description)")
+        }
+        if library.performance.inputFilter != old.performance.inputFilter {
+            log.log("Ingresso MIDI: \(connectedInputs.isEmpty ? "nessuno" : connectedInputs.joined(separator: ", "))")
         }
         do {
             let songs = try store.engineSongs()
@@ -211,6 +246,7 @@ final class AppModel: ObservableObject {
         do {
             let added = try store.installDemoContent()
             library = store.library
+            log.log("Brani dimostrativi aggiunti: \(added)")
             if selectedSongID == nil { selectedSongID = library.songs.first?.id }
             if added == 0 { errorMessage = "I brani dimostrativi sono già presenti." }
         } catch {
@@ -233,6 +269,7 @@ final class AppModel: ObservableObject {
             }
         }
         library = store.library
+        log.log("Importazione: \(urls.count - failures.count) file importati, \(failures.count) non riusciti")
         if !failures.isEmpty {
             errorMessage = "Alcuni file non sono stati importati:\n" + failures.joined(separator: "\n")
         }
@@ -378,6 +415,7 @@ final class AppModel: ObservableObject {
             library.controlMap.bindings[index] = binding
         case let .new(action):
             guard let binding = ControlBinding.learn(from: message, action: action) else { return }
+            log.log("MIDI Learn: \(action) ← \(binding.triggerLabel)")
             // Il nuovo controllo sostituisce sia il vecchio controllo di questa azione (stesso tipo)
             // sia l'azione che il controllo aveva prima.
             var bindings = library.controlMap.bindings.filter { b in

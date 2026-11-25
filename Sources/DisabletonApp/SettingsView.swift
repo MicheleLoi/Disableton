@@ -27,6 +27,8 @@ struct SettingsView: View {
                     soundSection
                     Divider()
                     librarySection
+                    Divider()
+                    SupportSection()
                 }
                 .padding(24)
                 .frame(maxWidth: .infinity, alignment: .leading)

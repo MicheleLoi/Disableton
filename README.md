@@ -32,12 +32,27 @@ app universale. Il primo passo che fallisce ferma i successivi.
 
 ## Scaricare l'app già pronta
 
-1. Su GitHub apri la scheda **Actions** del repository → l'ultima esecuzione riuscita di **macOS**.
-2. In fondo, sotto **Artifacts**, scarica **Disableton-macOS** e scompattalo: contiene
-   `Disableton.zip` (l'app) e `disableton-cli.zip` (la riga di comando).
-3. Scompatta `Disableton.zip` e sposta **Disableton.app** in Applicazioni.
-4. Al primo avvio macOS avvisa che lo sviluppatore non è identificato (l'app non è firmata con un
+Ogni versione che supera tutte le verifiche viene pubblicata come release su GitHub.
+
+1. Scarica **https://github.com/MicheleLoi/Disableton/releases/latest/download/Disableton.zip**
+   (link fisso, sempre all'ultima versione; meglio con Firefox sui Mac con Monterey).
+2. Scompatta e sposta **Disableton.app** in Applicazioni.
+3. Al primo avvio macOS avvisa che lo sviluppatore non è identificato (l'app non è firmata con un
    certificato Apple): clic destro su Disableton.app → **Apri** → **Apri**. Solo la prima volta.
+
+Dopo la prima installazione non serve più scaricare a mano: all'avvio Disableton controlla se c'è
+una nuova versione e mostra **Aggiorna a …** in alto; un clic la scarica, la verifica,
+sostituisce l'app e la riavvia (non durante l'esecuzione: prima va fermato il Krome).
+
+## Segnalare un problema
+
+Menu **Aiuto → Segnala un problema…** (oppure Impostazioni → Assistenza): scrivi cosa è successo e
+premi **Apri la segnalazione su GitHub**. Si apre nel browser una segnalazione già compilata con
+versione, impostazioni, porte MIDI e registro degli eventi (senza nomi di brani o groove); basta
+premere *Submit*. Se Disableton si chiude per un errore, al riavvio propone da solo la segnalazione
+con il rapporto di macOS.
+
+Il registro degli eventi è in `~/Library/Logs/Disableton/Disableton.log`.
 
 ## L'app
 

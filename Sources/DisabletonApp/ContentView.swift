@@ -13,10 +13,17 @@ struct ContentView: View {
                 ModeBar()
                 StatusBar()
             }
-            switch model.mode {
-            case .prep: PrepView()
-            case .commands: CommandsView()
-            case .stage: StageView()
+            Group {
+                switch model.mode {
+                case .prep: PrepView()
+                case .commands: CommandsView()
+                case .stage: StageView()
+                }
+            }
+            .sheet(isPresented: $model.showReport) {
+                ReportView()
+                    .environmentObject(model)
+                    .frame(width: 760, height: 680)
             }
         }
         .onReceive(timer) { _ in model.poll() }
@@ -69,6 +76,7 @@ struct ModeBar: View {
             .labelsHidden()
             .frame(width: 360)
             Spacer()
+            UpdateBadge()
             Button {
                 model.refreshPorts()
                 model.showSettings = true

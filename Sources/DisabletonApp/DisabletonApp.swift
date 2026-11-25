@@ -15,6 +15,13 @@ struct DisabletonApp: App {
         }
         .commands {
             CommandGroup(replacing: .newItem) {}
+            CommandGroup(after: .appInfo) {
+                Button("Controlla aggiornamenti…") { model.checkForUpdates(userInitiated: true) }
+            }
+            CommandGroup(replacing: .help) {
+                Button("Segnala un problema…") { model.openReport() }
+                Button("Mostra il registro") { model.revealLog() }
+            }
         }
     }
 }

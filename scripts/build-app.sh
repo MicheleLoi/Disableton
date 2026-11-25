@@ -5,6 +5,7 @@ cd "$(dirname "$0")/.."
 
 VERSION="${VERSION:-0.1.0}"
 BUILD="${BUILD:-1}"
+COMMIT="${COMMIT:-$(git rev-parse HEAD 2>/dev/null || echo sviluppo)}"
 ARCHS=(--arch arm64 --arch x86_64)
 
 swift build -c release "${ARCHS[@]}" --product DisabletonApp
@@ -34,6 +35,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>NSHighResolutionCapable</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>
     <key>NSHumanReadableCopyright</key><string>Disableton</string>
+    <key>DisabletonCommit</key><string>${COMMIT}</string>
 </dict>
 </plist>
 PLIST
