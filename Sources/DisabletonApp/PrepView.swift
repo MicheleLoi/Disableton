@@ -371,7 +371,10 @@ struct GrooveChip: View {
         .padding(.vertical, 7)
         .background(RoundedRectangle(cornerRadius: 8).stroke(previewing ? Color.accentColor : Color.gray.opacity(0.35)))
         .contentShape(Rectangle())
-        .onDrag { NSItemProvider(object: record.id.uuidString as NSString) }
+        .onDrag {
+            model.draggingGrooveID = record.id
+            return NSItemProvider(object: record.id.uuidString as NSString)
+        }
         .contextMenu {
             Button("Dettagli…") { model.detailGrooveID = record.id }
             Button("Aggiungi al brano") { model.addSlot(grooveID: record.id) }

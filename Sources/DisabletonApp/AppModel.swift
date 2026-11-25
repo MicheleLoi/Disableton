@@ -33,6 +33,8 @@ final class AppModel: ObservableObject {
     @Published var selectedSlotID: UUID?
     @Published var selectedKey: Int? = 38
     @Published var detailGrooveID: UUID?
+    /// Groove della libreria che si sta trascinando (impostato all'inizio del trascinamento).
+    var draggingGrooveID: UUID?
     @Published private(set) var snapshot: LiveSnapshot?
     @Published private(set) var availableInputs: [String] = []
     @Published private(set) var availableDestinations: [String] = []
@@ -308,14 +310,26 @@ final class AppModel: ObservableObject {
         return accepted
     }
 
-    /// Groove della libreria trascinati sulla sequenza del brano.
+    /// Groove della libreria trascinati sulla sequenza del brano. Si usa il groove annotato
+    /// all'inizio del trascinamento; la lettura del testo trascinato resta solo come riserva.
     func handleGrooveDrop(_ providers: [NSItemProvider]) -> Bool {
-        log.log("Trascinamento sulla sequenza: \(providers.count) elementi, tipi \(providers.flatMap { $0.registeredTypeIdentifiers })")
+        if let id = draggingGrooveID {
+            draggingGrooveID = nil
+            log.log("Trascinamento sulla sequenza: groove dalla libreria")
+            addSlot(grooveID: id)
+            return true
+        }
+        log.log("Trascinamento sulla sequenza senza groove annotato: tipi \(providers.flatMap { $0.registeredTypeIdentifiers })")
         var accepted = false
-        for provider in providers where provider.canLoadObject(ofClass: NSString.self) {
+        for provider in providers {
+            guard let type = provider.registeredTypeIdentifiers.first(where: {
+                UTType($0)?.conforms(to: .text) == true
+            }) else { continue }
             accepted = true
-            _ = provider.loadObject(ofClass: NSString.self) { object, _ in
-                guard let text = object as? NSString, let id = UUID(uuidString: text as String) else { return }
+            provider.loadDataRepresentation(forTypeIdentifier: type) { data, _ in
+                guard let data else { return }
+                let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .utf16) ?? ""
+                guard let id = UUID(uuidString: text.trimmingCharacters(in: .whitespacesAndNewlines)) else { return }
                 DispatchQueue.main.async { self.addSlot(grooveID: id) }
             }
         }
