@@ -198,39 +198,13 @@ extension Groove {
 }
 
 /// Tabella di conversione delle note. Un valore -1 elimina la nota.
-public struct NoteMap: Codable, Equatable, Identifiable, Sendable {
-    public var id: UUID
+public struct NoteMap: Codable, Equatable, Sendable {
     public var name: String
-    /// Nota originale → nota dello strumento (-1 = non suonare). Le note assenti restano uguali.
     public var mapping: [Int: Int]
 
-    public init(id: UUID = UUID(), name: String, mapping: [Int: Int]) {
-        self.id = id
+    public init(name: String, mapping: [Int: Int]) {
         self.name = name
         self.mapping = mapping
-    }
-
-    enum CodingKeys: String, CodingKey { case id, name, mapping }
-
-    public init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
-        name = try c.decodeIfPresent(String.self, forKey: .name) ?? "Mappa"
-        mapping = try c.decodeIfPresent([Int: Int].self, forKey: .mapping) ?? [:]
-    }
-
-    /// Nota di destinazione per l'interfaccia: nil = non suonare.
-    public func target(for note: Int) -> Int? {
-        guard let t = mapping[note] else { return note }
-        return (0...127).contains(t) ? t : nil
-    }
-
-    public mutating func setTarget(_ target: Int?, for note: Int) {
-        if let target, target == note {
-            mapping[note] = nil
-        } else {
-            mapping[note] = target ?? -1
-        }
     }
 
     public static let identity = NoteMap(name: "identità", mapping: [:])

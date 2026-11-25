@@ -137,8 +137,6 @@ public struct PerformanceSettings: Codable, Equatable, Sendable {
     public var destinationFilter: String?
     /// Tempo del clock interno (prove senza Krome e ascolto).
     public var internalBPM: Double
-    /// Mappa delle note scelta per ogni destinazione del suono (chiave: `SoundOutput.rawValue`).
-    public var noteMapIDs: [String: UUID]
 
     public init(inputFilter: String? = nil, latencyMs: Double = 0, lookaheadMs: Double = 2,
                 soundOutput: SoundOutput = .ezdrummer, destinationFilter: String? = "KROME",
@@ -149,11 +147,10 @@ public struct PerformanceSettings: Codable, Equatable, Sendable {
         self.soundOutput = soundOutput
         self.destinationFilter = destinationFilter
         self.internalBPM = internalBPM
-        self.noteMapIDs = [:]
     }
 
     enum CodingKeys: String, CodingKey {
-        case inputFilter, latencyMs, lookaheadMs, soundOutput, destinationFilter, internalBPM, noteMapIDs
+        case inputFilter, latencyMs, lookaheadMs, soundOutput, destinationFilter, internalBPM
     }
 
     public init(from decoder: Decoder) throws {
@@ -168,7 +165,6 @@ public struct PerformanceSettings: Codable, Equatable, Sendable {
             destinationFilter = "KROME"
         }
         internalBPM = try c.decodeIfPresent(Double.self, forKey: .internalBPM) ?? 120
-        noteMapIDs = try c.decodeIfPresent([String: UUID].self, forKey: .noteMapIDs) ?? [:]
     }
 
     public var playbackSettings: PlaybackController.Settings {
@@ -187,8 +183,6 @@ public struct Library: Codable, Equatable, Sendable {
     /// Canale MIDI verso EZdrummer, 1-16.
     public var outputChannel: Int
     public var performance: PerformanceSettings
-    /// Mappe delle note degli strumenti (es. un kit di Analog Lab).
-    public var noteMaps: [NoteMap]
 
     public init(grooves: [GrooveRecord] = [], songs: [SongRecord] = [],
                 controlMap: ControlMap = .default, outputChannel: Int = 10,
@@ -199,10 +193,9 @@ public struct Library: Codable, Equatable, Sendable {
         self.controlMap = controlMap
         self.outputChannel = outputChannel
         self.performance = performance
-        self.noteMaps = []
     }
 
-    enum CodingKeys: String, CodingKey { case formatVersion, grooves, songs, controlMap, outputChannel, performance, noteMaps }
+    enum CodingKeys: String, CodingKey { case formatVersion, grooves, songs, controlMap, outputChannel, performance }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -212,22 +205,6 @@ public struct Library: Codable, Equatable, Sendable {
         controlMap = try c.decodeIfPresent(ControlMap.self, forKey: .controlMap) ?? .default
         outputChannel = try c.decodeIfPresent(Int.self, forKey: .outputChannel) ?? 10
         performance = try c.decodeIfPresent(PerformanceSettings.self, forKey: .performance) ?? PerformanceSettings()
-        noteMaps = try c.decodeIfPresent([NoteMap].self, forKey: .noteMaps) ?? []
-    }
-
-    /// Mappa delle note della destinazione del suono attuale (nil = General MIDI).
-    public var activeNoteMap: NoteMap? {
-        guard let id = performance.noteMapIDs[performance.soundOutput.rawValue] else { return nil }
-        return noteMaps.first { $0.id == id }
-    }
-
-    /// Note usate dai groove della libreria, in ordine.
-    public func usedNotes(loading groove: (GrooveRecord) -> Groove?) -> [UInt8] {
-        var notes = Set<UInt8>()
-        for record in grooves {
-            if let g = groove(record) { notes.formUnion(g.noteHistogram.keys) }
-        }
-        return notes.sorted()
     }
 
     public func groove(named name: String) -> GrooveRecord? {

@@ -90,8 +90,6 @@ public final class GrooveEngine {
 
     /// Canale di uscita, 0-based (9 = canale 10).
     public var outputChannel: UInt8
-    /// Conversione delle note verso lo strumento (nil = General MIDI, nessuna conversione).
-    public var noteMap: NoteMap?
     public private(set) var song: EngineSong?
     public private(set) var isRunning = false
     /// Fin dove è già stato generato il brano.
@@ -276,31 +274,22 @@ public final class GrooveEngine {
             let base = seg.start + k * len
             for i in seg.groove.eventIndices(from: lo - base, to: hi - base) {
                 let event = seg.groove.events[i]
-                if let m = message(for: event.kind) {
-                    out.append(ScheduledMIDI(tick: base + event.tick, message: m))
-                }
+                out.append(ScheduledMIDI(tick: base + event.tick, message: message(for: event.kind)))
             }
         }
     }
 
-    private func message(for kind: GrooveEvent.Kind) -> MIDIMessage? {
+    private func message(for kind: GrooveEvent.Kind) -> MIDIMessage {
         switch kind {
-        case let .noteOn(original, velocity):
-            guard let note = mapped(original) else { return nil }
+        case let .noteOn(note, velocity):
             activeNotes.insert(note)
             return .noteOn(channel: outputChannel, note: note, velocity: velocity)
-        case let .noteOff(original):
-            guard let note = mapped(original) else { return nil }
+        case let .noteOff(note):
             activeNotes.remove(note)
             return .noteOff(channel: outputChannel, note: note, velocity: 0)
         case let .controlChange(controller, value):
             return .controlChange(channel: outputChannel, controller: controller, value: value)
         }
-    }
-
-    private func mapped(_ note: UInt8) -> UInt8? {
-        guard let map = noteMap else { return note }
-        return map.map(note)
     }
 
     private func flushNotes(at tick: Int, into out: inout [ScheduledMIDI]) {
