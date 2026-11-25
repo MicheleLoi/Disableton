@@ -310,6 +310,7 @@ final class AppModel: ObservableObject {
 
     /// Groove della libreria trascinati sulla sequenza del brano.
     func handleGrooveDrop(_ providers: [NSItemProvider]) -> Bool {
+        log.log("Trascinamento sulla sequenza: \(providers.count) elementi, tipi \(providers.flatMap { $0.registeredTypeIdentifiers })")
         var accepted = false
         for provider in providers where provider.canLoadObject(ofClass: NSString.self) {
             accepted = true

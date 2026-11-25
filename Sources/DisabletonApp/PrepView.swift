@@ -340,6 +340,7 @@ struct LibraryStrip: View {
 struct GrooveChip: View {
     @EnvironmentObject var model: AppModel
     let record: GrooveRecord
+    @State private var confirmDelete = false
 
     var body: some View {
         let groove = model.groove(for: record)
@@ -361,6 +362,10 @@ struct GrooveChip: View {
                 .disabled(model.selectedSongIndex == nil)
                 .help("Aggiungi al brano selezionato")
                 .accessibilityLabel("Aggiungi \(record.name) al brano")
+            Button { confirmDelete = true } label: { Image(systemName: "trash") }
+                .buttonStyle(.borderless)
+                .help("Elimina dalla libreria")
+                .accessibilityLabel("Elimina \(record.name) dalla libreria")
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
@@ -371,9 +376,20 @@ struct GrooveChip: View {
             Button("Dettagli…") { model.detailGrooveID = record.id }
             Button("Aggiungi al brano") { model.addSlot(grooveID: record.id) }
             Divider()
-            Button("Elimina dalla libreria") { model.deleteGroove(id: record.id) }
+            Button("Elimina dalla libreria…") { confirmDelete = true }
         }
         .onTapGesture(count: 2) { model.detailGrooveID = record.id }
+        .confirmationDialog("Eliminare «\(record.name)» dalla libreria?", isPresented: $confirmDelete) {
+            Button("Elimina", role: .destructive) { model.deleteGroove(id: record.id) }
+        } message: {
+            Text(deleteMessage)
+        }
+    }
+
+    private var deleteMessage: String {
+        let songs = model.library.songsUsing(grooveID: record.id)
+        guard !songs.isEmpty else { return "Il groove non è usato in nessun brano." }
+        return "Verrà tolto anche da: " + songs.joined(separator: ", ") + "."
     }
 
     private func subtitle(_ groove: Groove?) -> String {
