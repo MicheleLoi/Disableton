@@ -1,4 +1,5 @@
 #if canImport(SwiftUI) && os(macOS)
+import AppKit
 import GrooveCore
 import MIDIHost
 import SwiftUI
@@ -27,6 +28,14 @@ struct ContentView: View {
             }
         }
         .onReceive(timer) { _ in model.poll() }
+        .onAppear {
+            // Dimensione minima della finestra (su macOS 12 il frame minimo non basta).
+            DispatchQueue.main.async {
+                for window in NSApp.windows where window.isVisible {
+                    window.minSize = NSSize(width: 980, height: 640)
+                }
+            }
+        }
         .sheet(isPresented: $model.showSettings) {
             SettingsView()
                 .environmentObject(model)
@@ -102,15 +111,17 @@ struct StatusBar: View {
         HStack(spacing: 18) {
             HStack(spacing: 8) {
                 Circle().fill(clockColor(snap)).frame(width: 10, height: 10)
-                Text(clockText(snap)).font(.callout.weight(.semibold))
+                Text(clockText(snap)).font(.callout.weight(.semibold)).lineLimit(1).fixedSize()
             }
             Text(snap?.tempoBPM.map { String(format: "%.1f BPM", $0) } ?? "– BPM")
                 .font(.title3.weight(.bold).monospacedDigit())
+                .lineLimit(1)
+                .fixedSize()
             Text(barText(snap))
                 .font(.title3.weight(.bold).monospacedDigit())
             BeatDots(beat: snap?.beat, count: snap?.beatsPerBar ?? 4, size: 12, lit: Color.green, unlit: Color.gray.opacity(0.6))
             if let playing = status?.playingSlotName {
-                Text("Suona ") + Text(playing).bold()
+                (Text("Suona ") + Text(playing).bold()).lineLimit(1)
             } else {
                 Text("Silenzio").foregroundColor(.gray)
             }
@@ -123,9 +134,18 @@ struct StatusBar: View {
             if snap?.realtimePriority == false {
                 Text("Priorità tempo reale non ottenuta").font(.caption).foregroundColor(.orange)
             }
-            Button(role: .destructive) { model.panic() } label: {
-                Text("Panic").fontWeight(.semibold)
+            Button { model.panic() } label: {
+                Text("PANIC")
+                    .font(.callout.weight(.bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(Color(red: 0.75, green: 0.11, blue: 0.11)))
             }
+            .buttonStyle(.plain)
+            .fixedSize()
+            .help("Spegne subito tutte le note della batteria")
+            .accessibilityLabel("Panic: spegni tutte le note")
         }
         .foregroundColor(.white)
         .padding(.horizontal, 18)

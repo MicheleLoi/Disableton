@@ -10,7 +10,7 @@ struct PrepView: View {
     var body: some View {
         HStack(spacing: 0) {
             SetlistColumn()
-                .frame(width: 260)
+                .frame(minWidth: 190, idealWidth: 230, maxWidth: 250)
             Divider()
             VStack(spacing: 0) {
                 SongSequence()
@@ -19,10 +19,10 @@ struct PrepView: View {
                 LibraryStrip()
                     .frame(height: 230)
             }
-            .frame(maxWidth: .infinity)
+            .frame(minWidth: 400, maxWidth: .infinity)
             Divider()
             SlotInspector()
-                .frame(width: 290)
+                .frame(minWidth: 230, idealWidth: 260, maxWidth: 280)
         }
     }
 }
@@ -44,11 +44,9 @@ struct SetlistColumn: View {
             .padding(.vertical, 10)
 
             if model.library.songs.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Nessun brano.").foregroundColor(.secondary)
-                    Button("Aggiungi brani dimostrativi") { model.installDemo() }
-                }
-                .padding(14)
+                Text("Nessun brano.")
+                    .foregroundColor(.secondary)
+                    .padding(14)
                 Spacer()
             } else {
                 List(selection: $model.selectedSongID) {
@@ -265,11 +263,23 @@ struct LibraryStrip: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                Text("Libreria groove")
+                    .font(.headline)
+                    .lineLimit(1)
+                    .fixedSize()
+                Spacer(minLength: 8)
+                Toggle("Da EZdrummer 3", isOn: $importAsEZdrummer)
+                    .toggleStyle(.checkbox)
+                    .fixedSize()
+                    .help("Provenienza assegnata ai file importati")
+                Button("Importa .mid…") { showImporter = true }
+                    .fixedSize()
+            }
             HStack(spacing: 10) {
-                Text("Libreria groove").font(.headline)
                 TextField("Cerca", text: $search)
                     .textFieldStyle(.roundedBorder)
-                    .frame(width: 180)
+                    .frame(minWidth: 120, maxWidth: 220)
                 Picker("Provenienza", selection: $filter) {
                     Text("Tutti").tag(GrooveSource?.none)
                     Text("EZdrummer 3").tag(GrooveSource?.some(.ezdrummer))
@@ -277,20 +287,14 @@ struct LibraryStrip: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(width: 280)
-                Spacer()
-                Toggle("Da EZdrummer 3", isOn: $importAsEZdrummer)
-                    .toggleStyle(.checkbox)
-                    .help("Provenienza assegnata ai file importati")
-                Button("Importa .mid…") { showImporter = true }
+                .fixedSize()
+                Spacer(minLength: 0)
             }
 
             if model.library.grooves.isEmpty {
-                HStack(spacing: 12) {
-                    Text("La libreria è vuota: trascina qui i file .mid, usa \"Importa\", oppure")
-                        .foregroundColor(.secondary)
-                    Button("aggiungi i brani dimostrativi") { model.installDemo() }
-                }
+                Text("La libreria è vuota: trascina qui i file .mid (dal Finder o da EZdrummer 3) oppure usa \"Importa .mid…\".")
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer()
             } else {
                 ScrollView {

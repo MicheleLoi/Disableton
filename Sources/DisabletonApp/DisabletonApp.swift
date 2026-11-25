@@ -11,7 +11,7 @@ struct DisabletonApp: App {
         WindowGroup("Disableton") {
             ContentView()
                 .environmentObject(model)
-                .frame(minWidth: 1100, minHeight: 700)
+                .frame(minWidth: 980, minHeight: 640)
         }
         .commands {
             CommandGroup(replacing: .newItem) {}
