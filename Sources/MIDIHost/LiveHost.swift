@@ -63,7 +63,8 @@ public final class LiveHost {
 
     public init(songs: [EngineSong], controlMap: ControlMap, outputChannel: Int,
                 settings: PlaybackController.Settings, inputFilter: String?,
-                output: SoundOutput = .ezdrummer, destinationFilter: String? = nil) throws {
+                output: SoundOutput = .ezdrummer, destinationFilter: String? = nil,
+                noteMap: NoteMap? = nil) throws {
         let backend = try MIDIBackend(clientName: "Disableton")
         try backend.createVirtualSource(named: LiveHost.virtualPortName)
         self.backend = backend
@@ -76,6 +77,7 @@ public final class LiveHost {
         backend.onMessage = { [weak self] message, time in
             self?.receive(message, at: time)
         }
+        controller.engine.noteMap = noteMap
         controller.onUnmappedMessage = { [weak self] message in
             self?.lastUnmapped = message
         }
@@ -129,8 +131,12 @@ public final class LiveHost {
     /// Aggiorna brani, comandi e impostazioni. Se sta suonando, i nuovi brani diventano
     /// effettivi allo Stop, per non disturbare l'esecuzione.
     public func update(songs: [EngineSong], controlMap: ControlMap, outputChannel: Int,
-                       settings: PlaybackController.Settings) {
+                       settings: PlaybackController.Settings, noteMap: NoteMap? = nil) {
         lock.lock(); defer { lock.unlock() }
+        if controller.engine.noteMap != noteMap {
+            for m in controller.engine.panic() { route(m, at: 0) }
+            controller.engine.noteMap = noteMap
+        }
         controller.controlMap = controlMap
         controller.settings = settings
         controller.engine.outputChannel = LiveHost.channelIndex(outputChannel)
@@ -186,6 +192,15 @@ public final class LiveHost {
         lock.lock(); defer { lock.unlock() }
         stopInternalLocked(now: HostClock.nowNanos())
         for m in controller.engine.silenceNow() { route(m, at: 0) }
+    }
+
+    /// Suona una singola nota sullo strumento (per trovare i suoni di un kit), senza mappa.
+    public func playTestNote(_ note: UInt8, velocity: UInt8 = 110) {
+        lock.lock(); defer { lock.unlock() }
+        let channel = controller.engine.outputChannel
+        let now = HostClock.nowNanos()
+        route(.noteOn(channel: channel, note: note, velocity: velocity), at: now)
+        route(.noteOff(channel: channel, note: note, velocity: 0), at: now + 300_000_000)
     }
 
     /// Cambia il tempo del clock interno (o dell'ascolto) senza ricominciare.

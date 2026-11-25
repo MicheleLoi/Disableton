@@ -85,10 +85,16 @@ final class AppModel: ObservableObject {
     enum LearnTarget: Equatable {
         case existing(Int)
         case new(ControlAction)
+        /// Nota di uno strumento, per l'editor delle mappe delle note.
+        case instrumentNote
     }
 
     let store: LibraryStore?
     private var host: LiveHost?
+    /// Accesso al motore per le prove di suono (mappe delle note).
+    var hostForTesting: LiveHost? { host }
+    /// MIDI Learn di una nota grezza (editor delle mappe): riceve il numero di nota premuto.
+    private var rawLearnHandler: ((Int) -> Void)?
 
     init() {
         var openedStore: LibraryStore?
@@ -139,7 +145,8 @@ final class AppModel: ObservableObject {
             let newHost = try LiveHost(songs: songs, controlMap: library.controlMap,
                                        outputChannel: library.outputChannel,
                                        settings: p.playbackSettings, inputFilter: p.inputFilter,
-                                       output: p.soundOutput, destinationFilter: p.destinationFilter)
+                                       output: p.soundOutput, destinationFilter: p.destinationFilter,
+                                       noteMap: library.activeNoteMap)
             host = newHost
             connectedInputs = newHost.connectedInputs
             engineRunning = true
@@ -208,7 +215,7 @@ final class AppModel: ObservableObject {
         do {
             let songs = try store.engineSongs()
             host.update(songs: songs, controlMap: library.controlMap, outputChannel: library.outputChannel,
-                        settings: library.performance.playbackSettings)
+                        settings: library.performance.playbackSettings, noteMap: library.activeNoteMap)
         } catch {
             errorMessage = "\(error)"
         }
@@ -621,6 +628,7 @@ final class AppModel: ObservableObject {
 
     func cancelLearn() {
         host?.cancelLearn()
+        rawLearnHandler = nil
         learningTarget = nil
     }
 
@@ -635,7 +643,26 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Il prossimo Note On ricevuto viene passato a `handler` (numero di nota) invece di essere eseguito.
+    func learnRawNote(_ handler: @escaping (Int) -> Void) {
+        guard let host else {
+            errorMessage = "Il motore MIDI non è attivo."
+            return
+        }
+        rawLearnHandler = handler
+        learningTarget = .instrumentNote
+        host.learnNext { message in
+            self.finishLearn(message)
+        }
+    }
+
     private func finishLearn(_ message: MIDIMessage) {
+        if let handler = rawLearnHandler {
+            rawLearnHandler = nil
+            learningTarget = nil
+            if case let .noteOn(_, note, _) = message { handler(Int(note)) }
+            return
+        }
         defer { learningTarget = nil }
         guard let target = learningTarget else { return }
         switch target {
@@ -644,6 +671,8 @@ final class AppModel: ObservableObject {
                   let binding = ControlBinding.learn(from: message, action: library.controlMap.bindings[index].action)
             else { return }
             library.controlMap.bindings[index] = binding
+        case .instrumentNote:
+            return
         case let .new(action):
             guard let binding = ControlBinding.learn(from: message, action: action) else { return }
             log.log("MIDI Learn: \(action) ← \(binding.triggerLabel)")

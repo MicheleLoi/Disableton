@@ -8,6 +8,7 @@ struct SettingsView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @State private var confirmRestart = false
+    @State private var editingNoteMap: NoteMapSheetItem?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -19,6 +20,11 @@ struct SettingsView: View {
             }
             .padding(20)
             Divider()
+                .sheet(item: $editingNoteMap) { item in
+                    NoteMapEditor(mapID: item.id)
+                        .environmentObject(model)
+                        .frame(width: 640, height: 620)
+                }
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     kromeSection
@@ -123,6 +129,23 @@ struct SettingsView: View {
             Text("Uscita attuale: " + (model.snapshot?.outputDescription ?? "–"))
                 .font(.caption).foregroundColor(.secondary)
 
+            HStack(spacing: 10) {
+                Picker("Mappa delle note", selection: $model.activeNoteMapID) {
+                    Text("General MIDI (nessuna conversione)").tag(UUID?.none)
+                    ForEach(model.library.noteMaps) { map in
+                        Text(map.name).tag(UUID?.some(map.id))
+                    }
+                }
+                .frame(maxWidth: 420)
+                if let id = model.activeNoteMapID {
+                    Button("Modifica…") { editingNoteMap = NoteMapSheetItem(id: id) }
+                }
+                Button("Nuova…") { editingNoteMap = NoteMapSheetItem(id: model.newNoteMap()) }
+            }
+            Text("Serve se lo strumento ha i suoni della batteria su tasti diversi dal General MIDI (es. un kit di Analog Lab). La mappa vale per la destinazione scelta sopra.")
+                .font(.caption).foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
             HStack(spacing: 24) {
                 Stepper(value: $model.library.outputChannel, in: 1...16) {
                     Text("Canale MIDI \(model.library.outputChannel)")
@@ -181,5 +204,8 @@ struct SettingsView: View {
         Binding(get: { model.library.performance.destinationFilter },
                 set: { model.library.performance.destinationFilter = $0 })
     }
+}
+struct NoteMapSheetItem: Identifiable {
+    let id: UUID
 }
 #endif

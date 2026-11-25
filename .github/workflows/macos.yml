@@ -111,7 +111,8 @@ jobs:
           retention-days: 30
 
       - name: 13. Pubblica la versione (release "latest")
-        if: github.event_name == 'push'
+        # Le modifiche marcate "[nessuna release]" vengono verificate ma non pubblicate.
+        if: github.event_name == 'push' && !contains(github.event.head_commit.message, '[nessuna release]')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
