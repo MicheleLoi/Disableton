@@ -54,6 +54,9 @@ struct DisabletonApp: App {
                 Button("Palco") { model.mode = .stage }.keyboardShortcut("3")
             }
             CommandGroup(replacing: .help) {
+                Button("Collegare una DAW (esempio: REAPER)…") { model.openDAWHelp() }
+                Button("Element: strumenti plugin senza DAW…") { model.openElementHelp() }
+                Divider()
                 Button("Segnala un problema…") { model.openReport() }
                 Button("Mostra il registro") { model.revealLog() }
             }

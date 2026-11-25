@@ -105,6 +105,15 @@ struct ModeBar: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .background(Color(nsColor: .windowBackgroundColor))
+        .sheet(isPresented: $model.showElementHelp) {
+            ElementHelpView()
+                .frame(width: 700, height: 640)
+        }
+        .sheet(isPresented: $model.showDAWHelp) {
+            DAWHelpView()
+                .environmentObject(model)
+                .frame(width: 700, height: 640)
+        }
         .alert("Installare l'aggiornamento?", isPresented: $model.confirmInstallUpdate) {
             Button("Più tardi", role: .cancel) {}
             Button("Installa e riavvia") { model.installUpdate() }

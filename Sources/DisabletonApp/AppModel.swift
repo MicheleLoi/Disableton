@@ -47,6 +47,8 @@ final class AppModel: ObservableObject {
     @Published var selectedKey: Int? = 38
     @Published var detailGrooveID: UUID?
     @Published var confirmDeleteSong = false
+    @Published var showDAWHelp = false
+    @Published var showElementHelp = false
     @Published var confirmInstallUpdate = false
     /// Avviso breve mostrato nella barra di stato (es. dopo un MIDI Learn).
     @Published private(set) var notice: String?
@@ -55,6 +57,7 @@ final class AppModel: ObservableObject {
     private var isRestoring = false
     private var lastUndoPush = Date.distantPast
     private var noticeWork: DispatchWorkItem?
+    private var updateTimer: Timer?
     /// Groove della libreria o slot del brano che si sta trascinando (impostati all'inizio del trascinamento).
     var draggingGrooveID: UUID?
     var draggingSlotID: UUID?
@@ -126,6 +129,14 @@ final class AppModel: ObservableObject {
         if !automated {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
                 self?.checkForUpdates(userInitiated: false)
+            }
+            // Controllo periodico (ogni ora), mai mentre suona.
+            updateTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
+                guard let self, !self.isPlaying else { return }
+                switch self.updateState {
+                case .available, .downloading, .checking: return
+                default: self.checkForUpdates(userInitiated: false)
+                }
             }
         }
         AppModel.shared = self
@@ -336,6 +347,23 @@ final class AppModel: ObservableObject {
     private func makeSelectedSongCurrentIfIdle() {
         guard !isPlaying, let index = selectedSongIndex, snapshot?.status.songIndex != index else { return }
         perform(.selectSong(index))
+    }
+
+    /// Apre la guida per collegare una DAW (dalla vista Preparazione o Comandi).
+    func openDAWHelp() {
+        showSettings = false
+        if mode == .stage { mode = .prep }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.showDAWHelp = true
+        }
+    }
+
+    func openElementHelp() {
+        showSettings = false
+        if mode == .stage { mode = .prep }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.showElementHelp = true
+        }
     }
 
     func showNotice(_ text: String) {
