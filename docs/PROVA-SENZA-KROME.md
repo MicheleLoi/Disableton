@@ -44,23 +44,24 @@ e scompattalo: ottieni la cartella *Groove di prova*.
 
 ## C. Suono e tempo (requisiti 7, 8, 12)
 
-8. Impostazioni → Suono della batteria → **Sintetizzatore integrato di macOS** → Fine.
-9. Seleziona "Prova rock" → **Seleziona** (in alto al centro).
-10. Impostazioni → Clock → **120** BPM → **Avvia** → Fine.
-    → Barra nera: "Clock interno", 120 BPM, battuta e 4 pallini che avanzano; suona *Rock strofa*
-    (scheda verde).
-11. Clic destro su *Rock ritornello* → **Suona dal Krome (prova)**.
-    → Scheda arancione ("in coda"), poi alla battuta successiva parte il ritornello: il cambio cade
-    esattamente sul battere, senza buchi né colpi doppi.
-12. Clic destro su *Fill tom* → **Suona dal Krome (prova)**.
-    → Una battuta di fill, poi torna da solo al ritornello.
-13. Vista **Palco** → leggibile da lontano? Esc per tornare.
-14. Clic destro su *Finale* → **Suona dal Krome (prova)** → un colpo, poi silenzio.
-15. Impostazioni → Clock → **Ferma**. Ripeti con "Prova valzer" (3 pallini per battuta) e
-    "Prova 6/8" (6 pallini), anche a 80 e 160 BPM.
-16. Durante la riproduzione premi **PANIC** → il suono si interrompe subito.
+8. Impostazioni → Suono della batteria → **Sintetizzatore integrato di macOS** → Fine (o Esc).
+9. Clicca "Prova rock" in scaletta, poi **▶ Prova senza Krome** nella barra nera (o ⌘R).
+   → Barra nera: "Clock interno", battuta e 4 pallini che avanzano; suona *Rock strofa* (scheda verde).
+10. Clic destro su *Rock ritornello* → **Fai partire questo groove** (oppure selezionalo e premi
+    **Fai partire nel brano** a destra).
+    → Scheda arancione ("in coda", con **Annulla** nella barra nera), poi alla battuta successiva
+    parte il ritornello: il cambio cade esattamente sul battere, senza buchi né colpi doppi.
+11. Fai partire *Fill tom* → una battuta di fill, poi torna da solo al ritornello.
+12. Vista **Palco** (⌘3) → leggibile da lontano? STOP e PANIC sono in alto; Esc per tornare.
+13. Fai partire *Finale* → un colpo, poi silenzio.
+14. **STOP** nella barra nera (o ⌘.) ferma il clock interno.
+15. Ripeti con "Prova valzer" (3 pallini per battuta) e "Prova 6/8" (6 pallini). Cambia il tempo
+    da Impostazioni → Clock mentre suona: il groove accelera o rallenta senza ripartire.
+16. Durante la riproduzione premi **PANIC** → silenzio immediato.
+17. Togli un groove dal brano con la **✕**, poi **⌘Z** (o ↶ in alto) → torna al suo posto.
+    Riordina i groove trascinando una scheda sopra un'altra.
 
 ## D. Segnalazione
 
-17. **Aiuto → Segnala un problema…** → scrivi cosa è andato bene e cosa no → **Apri la
+18. **Aiuto → Segnala un problema…** → scrivi cosa è andato bene e cosa no → **Apri la
     segnalazione su GitHub** → *Submit*. Il registro allegato mostra tempi e cambi reali.

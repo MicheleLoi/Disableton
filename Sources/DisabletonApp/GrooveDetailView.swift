@@ -26,7 +26,7 @@ struct GrooveDetailView: View {
                             model.stopPreview()
                             dismiss()
                         }
-                        .keyboardShortcut(.defaultAction)
+                        .keyboardShortcut(.cancelAction)
                     }
 
                     Form {
@@ -114,9 +114,16 @@ struct GrooveDetailView: View {
                     dismiss()
                 }
             } message: {
-                Text(usedIn.isEmpty ? "Il file verrà rimosso dalla libreria."
-                     : "Verrà tolto anche da: " + usedIn.joined(separator: ", ") + ".")
+                Text(usedIn.isEmpty ? "Il groove verrà tolto dalla libreria (⌘Z per annullare)."
+                     : "Verrà tolto anche da: " + usedIn.joined(separator: ", ") + " (⌘Z per annullare).")
             }
+        } else {
+            VStack(spacing: 12) {
+                Text("Questo groove non è più nella libreria.").foregroundColor(.secondary)
+                Button("Fine") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }

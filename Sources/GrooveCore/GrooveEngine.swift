@@ -193,6 +193,15 @@ public final class GrooveEngine {
 
     public func panic() -> [MIDIMessage] { silenceMessages() }
 
+    /// Silenzio immediato: ferma il groove in corso e svuota la coda, senza fermare il trasporto
+    /// (il Krome continua a mandare il clock; un nuovo comando fa ripartire un groove).
+    public func silenceNow() -> [MIDIMessage] {
+        segment = nil
+        pending = nil
+        armedSlot = nil
+        return silenceMessages()
+    }
+
     // MARK: - Generazione
 
     /// Genera gli eventi del brano fino alla posizione `target` (esclusa).

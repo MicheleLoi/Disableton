@@ -185,6 +185,12 @@ extension AppModel {
         }
     }
 
+    /// Chiede conferma prima di installare (l'app si chiude e si riapre).
+    func requestInstallUpdate() {
+        guard case .available = updateState else { return }
+        confirmInstallUpdate = true
+    }
+
     func installUpdate() {
         guard case let .available(release) = updateState else { return }
         if snapshot?.status.transportRunning == true {
@@ -198,7 +204,8 @@ extension AppModel {
         }
         updateState = .downloading(release)
         log.log("Download dell'aggiornamento \(release.version)")
-        Updater.downloadAndInstall(release, log: { [weak self] in self?.log.log($0) }) { [weak self] message in
+        Updater.downloadAndInstall(release, canInstall: { [weak self] in self?.isPlaying != true },
+                                   log: { [weak self] in self?.log.log($0) }) { [weak self] message in
             self?.updateState = .failed(message)
             self?.errorMessage = message
         }

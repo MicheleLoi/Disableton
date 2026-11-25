@@ -22,19 +22,42 @@ enum AppMode: String, CaseIterable, Identifiable {
 /// Stato dell'app. Ogni modifica alla libreria viene salvata subito su disco e passata al motore.
 /// Tutti i metodi vanno chiamati dal thread principale.
 final class AppModel: ObservableObject {
+    /// Il modello dell'app (per il delegato dell'applicazione).
+    static weak var shared: AppModel?
+
     @Published var library: Library {
         didSet {
             if library != oldValue { libraryChanged(from: oldValue) }
         }
     }
-    @Published var mode: AppMode = .prep
+    @Published var mode: AppMode = .prep {
+        didSet { if mode == .stage, learningTarget != nil { cancelLearn() } }
+    }
     @Published var showSettings = false
-    @Published var selectedSongID: UUID?
-    @Published var selectedSlotID: UUID?
+    @Published var selectedSongID: UUID? {
+        didSet {
+            guard selectedSongID != oldValue else { return }
+            if learningTarget != nil { cancelLearn() }
+            makeSelectedSongCurrentIfIdle()
+        }
+    }
+    @Published var selectedSlotID: UUID? {
+        didSet { if selectedSlotID != oldValue, learningTarget != nil { cancelLearn() } }
+    }
     @Published var selectedKey: Int? = 38
     @Published var detailGrooveID: UUID?
-    /// Groove della libreria che si sta trascinando (impostato all'inizio del trascinamento).
+    @Published var confirmDeleteSong = false
+    @Published var confirmInstallUpdate = false
+    /// Avviso breve mostrato nella barra di stato (es. dopo un MIDI Learn).
+    @Published private(set) var notice: String?
+    @Published private(set) var undoStack: [Library] = []
+    @Published private(set) var redoStack: [Library] = []
+    private var isRestoring = false
+    private var lastUndoPush = Date.distantPast
+    private var noticeWork: DispatchWorkItem?
+    /// Groove della libreria o slot del brano che si sta trascinando (impostati all'inizio del trascinamento).
     var draggingGrooveID: UUID?
+    var draggingSlotID: UUID?
     @Published private(set) var snapshot: LiveSnapshot?
     @Published private(set) var availableInputs: [String] = []
     @Published private(set) var availableDestinations: [String] = []
@@ -55,7 +78,9 @@ final class AppModel: ObservableObject {
     var lastLoggedSnapshot: LiveSnapshot?
     @Published private(set) var learningTarget: LearnTarget?
     @Published private(set) var previewingGrooveID: UUID?
-    @Published var previewBPM: Double = 100
+    @Published var previewBPM: Double = 100 {
+        didSet { if previewingGrooveID != nil { host?.setInternalBPM(previewBPM) } }
+    }
 
     enum LearnTarget: Equatable {
         case existing(Int)
@@ -97,6 +122,7 @@ final class AppModel: ObservableObject {
                 self?.checkForUpdates(userInitiated: false)
             }
         }
+        AppModel.shared = self
     }
 
     var libraryFolder: URL { store?.root ?? LibraryStore.defaultRoot }
@@ -117,6 +143,9 @@ final class AppModel: ObservableObject {
             host = newHost
             connectedInputs = newHost.connectedInputs
             engineRunning = true
+            learningTarget = nil
+            previewingGrooveID = nil
+            makeSelectedSongCurrentIfIdle()
             log.log("Motore MIDI avviato · ingressi: \(connectedInputs.isEmpty ? "nessuno" : connectedInputs.joined(separator: ", ")) · uscita: \(newHost.snapshot().outputDescription)")
         } catch {
             engineRunning = false
@@ -140,6 +169,16 @@ final class AppModel: ObservableObject {
 
     private func libraryChanged(from old: Library) {
         guard let store else { return }
+        if !isRestoring {
+            // Le modifiche ravvicinate (es. scrittura di un nome) diventano un solo passo di "Annulla".
+            let now = Date()
+            if undoStack.isEmpty || now.timeIntervalSince(lastUndoPush) > 1.0 {
+                undoStack.append(old)
+                if undoStack.count > 200 { undoStack.removeFirst() }
+            }
+            lastUndoPush = now
+            if !redoStack.isEmpty { redoStack.removeAll() }
+        }
         store.library = library
         do {
             try store.save()
@@ -159,6 +198,9 @@ final class AppModel: ObservableObject {
             let description = host.configureOutput(library.performance.soundOutput,
                                                    destinationFilter: library.performance.destinationFilter)
             log.log("Uscita del suono: \(description)")
+        }
+        if library.performance.internalBPM != old.performance.internalBPM, snapshot?.internalClock == true {
+            host.setInternalBPM(library.performance.internalBPM)
         }
         if library.performance.inputFilter != old.performance.inputFilter {
             log.log("Ingresso MIDI: \(connectedInputs.isEmpty ? "nessuno" : connectedInputs.joined(separator: ", "))")
@@ -181,21 +223,160 @@ final class AppModel: ObservableObject {
 
     // MARK: - Comandi e trasporto
 
+    /// Il Krome sta suonando e comanda la riproduzione.
+    var isKromePlaying: Bool {
+        guard let snap = snapshot else { return false }
+        return snap.clockReceiving && snap.status.transportRunning
+    }
+
+    /// Qualcosa sta suonando (Krome, clock interno o ascolto).
+    var isPlaying: Bool { snapshot?.status.transportRunning == true }
+
     func perform(_ action: ControlAction) {
         host?.perform(action)
     }
 
+    /// Emergenza: silenzio immediato e stop di ascolto e clock interno.
     func panic() {
         host?.panic()
+        previewingGrooveID = nil
+        log.log("PANIC")
     }
 
+    /// Che cosa farebbe STOP adesso (nil = niente da fermare).
+    var stopLabel: String? {
+        guard let snap = snapshot else { return nil }
+        if snap.previewing { return "Ferma ascolto" }
+        if snap.internalClock { return "Ferma" }
+        if snap.status.transportRunning {
+            if snap.status.stopPending { return nil }
+            return snap.status.playingSlot == nil ? nil : "Silenzio a fine battuta"
+        }
+        return snap.status.armedSlot != nil ? "Annulla avvio" : nil
+    }
+
+    /// STOP: ferma ascolto o clock interno; con il Krome mette in coda il silenzio a fine battuta
+    /// (il Krome resta il padrone del trasporto).
+    func stopPlayback() {
+        guard let snap = snapshot else { return }
+        if snap.previewing {
+            stopPreview()
+        } else if snap.internalClock {
+            host?.stopInternalClock()
+        } else {
+            perform(.stopAtBarEnd)
+        }
+        log.log("STOP")
+    }
+
+    /// Annulla un cambio di groove (o un silenzio) in coda.
+    func cancelPending() {
+        guard let playing = snapshot?.status.playingSlot else {
+            perform(.stopAtBarEnd)
+            return
+        }
+        perform(.triggerSlot(playing))
+    }
+
+    /// Avvia il brano selezionato con il clock interno (prova senza Krome).
     func startInternalClock() {
+        guard !isKromePlaying else {
+            errorMessage = "Il Krome sta suonando: ferma prima il suo sequencer."
+            return
+        }
         previewingGrooveID = nil
+        if let index = selectedSongIndex { perform(.selectSong(index)) }
         host?.startInternalClock(bpm: library.performance.internalBPM)
     }
 
     func stopInternalClock() {
         host?.stopInternalClock()
+    }
+
+    /// Fa suonare uno slot del brano selezionato come se arrivasse il comando dal Krome.
+    /// A riproduzione ferma parte con il clock interno.
+    func playSlot(_ index: Int) {
+        guard let songIndex = selectedSongIndex else { return }
+        if snapshot?.status.songIndex != songIndex { perform(.selectSong(songIndex)) }
+        if isPlaying, snapshot?.previewing != true {
+            perform(.triggerSlot(index))
+        } else {
+            previewingGrooveID = nil
+            perform(.triggerSlot(index))
+            host?.startInternalClock(bpm: library.performance.internalBPM)
+        }
+    }
+
+    /// Prova un comando dalla vista Comandi.
+    func tryAction(_ action: ControlAction) {
+        switch action {
+        case let .triggerSlot(i):
+            playSlot(i)
+        case .fill, .nextSlot, .previousSlot, .stopAtBarEnd:
+            guard isPlaying else {
+                errorMessage = "Avvia prima la riproduzione (Krome, oppure ▶ Prova senza Krome nella barra in alto)."
+                return
+            }
+            perform(action)
+        case .panic:
+            panic()
+        default:
+            perform(action)
+        }
+    }
+
+    /// A riproduzione ferma il brano selezionato in scaletta diventa il brano corrente.
+    private func makeSelectedSongCurrentIfIdle() {
+        guard !isPlaying, let index = selectedSongIndex, snapshot?.status.songIndex != index else { return }
+        perform(.selectSong(index))
+    }
+
+    func showNotice(_ text: String) {
+        notice = text
+        noticeWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.notice = nil }
+        noticeWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 6, execute: work)
+    }
+
+    // MARK: - Annulla / Ripeti
+
+    var canUndo: Bool { !undoStack.isEmpty }
+    var canRedo: Bool { !redoStack.isEmpty }
+
+    func undo() {
+        guard let previous = undoStack.popLast() else { return }
+        redoStack.append(library)
+        restore(previous)
+        log.log("Annulla")
+    }
+
+    func redo() {
+        guard let next = redoStack.popLast() else { return }
+        undoStack.append(library)
+        restore(next)
+        log.log("Ripeti")
+    }
+
+    private func restore(_ value: Library) {
+        isRestoring = true
+        store?.library = value
+        store?.restoreDeletedFiles()
+        library = value
+        isRestoring = false
+        if let id = selectedSongID, value.songIndex(id: id) == nil { selectedSongID = value.songs.first?.id }
+        if let s = selectedSongIndex, let id = selectedSlotID, !value.songs[s].slots.contains(where: { $0.id == id }) {
+            selectedSlotID = nil
+        }
+    }
+
+    /// ⌘⌫: toglie il groove selezionato dal brano, oppure chiede di eliminare il brano selezionato.
+    func deleteSelection() {
+        if selectedSlotIndex != nil {
+            removeSelectedSlot()
+        } else if selectedSongIndex != nil {
+            confirmDeleteSong = true
+        }
     }
 
     // MARK: - Brani e slot
@@ -249,6 +430,34 @@ final class AppModel: ObservableObject {
         guard let s = selectedSongIndex, let k = selectedSlotIndex else { return }
         library.removeSlots(fromSong: s, atOffsets: IndexSet(integer: k))
         selectedSlotID = nil
+    }
+
+    func removeSlot(id: UUID) {
+        guard let s = selectedSongIndex, let k = library.songs[s].slots.firstIndex(where: { $0.id == id }) else { return }
+        library.removeSlots(fromSong: s, atOffsets: IndexSet(integer: k))
+        if selectedSlotID == id { selectedSlotID = nil }
+    }
+
+    /// Rilascio su una scheda del brano: sposta lo slot trascinato in quella posizione, oppure
+    /// inserisce lì il groove trascinato dalla libreria.
+    func handleSlotDrop(onto index: Int) -> Bool {
+        guard let s = selectedSongIndex else { return false }
+        if let slotID = draggingSlotID {
+            draggingSlotID = nil
+            guard let from = library.songs[s].slots.firstIndex(where: { $0.id == slotID }), from != index else { return true }
+            library.moveSlots(inSong: s, fromOffsets: IndexSet(integer: from), toOffset: index > from ? index + 1 : index)
+            return true
+        }
+        if let grooveID = draggingGrooveID {
+            draggingGrooveID = nil
+            addSlot(grooveID: grooveID)
+            let last = library.songs[s].slots.count - 1
+            if last > index {
+                library.moveSlots(inSong: s, fromOffsets: IndexSet(integer: last), toOffset: index)
+            }
+            return true
+        }
+        return false
     }
 
     // MARK: - Import
@@ -313,6 +522,14 @@ final class AppModel: ObservableObject {
     /// Groove della libreria trascinati sulla sequenza del brano. Si usa il groove annotato
     /// all'inizio del trascinamento; la lettura del testo trascinato resta solo come riserva.
     func handleGrooveDrop(_ providers: [NSItemProvider]) -> Bool {
+        if let slotID = draggingSlotID, let s = selectedSongIndex {
+            // Uno slot del brano rilasciato sul riquadro finale: va in fondo.
+            draggingSlotID = nil
+            if let from = library.songs[s].slots.firstIndex(where: { $0.id == slotID }) {
+                library.moveSlots(inSong: s, fromOffsets: IndexSet(integer: from), toOffset: library.songs[s].slots.count)
+            }
+            return true
+        }
         if let id = draggingGrooveID {
             draggingGrooveID = nil
             log.log("Trascinamento sulla sequenza: groove dalla libreria")
@@ -359,6 +576,10 @@ final class AppModel: ObservableObject {
             return
         }
         guard let host, let groove = groove(for: record) else { return }
+        guard !isKromePlaying else {
+            errorMessage = "Il Krome sta suonando: ferma prima il suo sequencer per ascoltare un groove da solo."
+            return
+        }
         host.startPreview(groove: groove, bpm: previewBPM)
         previewingGrooveID = record.id
     }
@@ -428,6 +649,13 @@ final class AppModel: ObservableObject {
             log.log("MIDI Learn: \(action) ← \(binding.triggerLabel)")
             // Il nuovo controllo sostituisce sia il vecchio controllo di questa azione (stesso tipo)
             // sia l'azione che il controllo aveva prima.
+            if let previous = library.controlMap.bindings.first(where: {
+                $0.kind == binding.kind && $0.channel == binding.channel && $0.number == binding.number && $0.action != action
+            }) {
+                showNotice("\(binding.triggerLabel) ora comanda «\(action.label)» (prima: «\(previous.action.label)»)")
+            } else {
+                showNotice("\(binding.triggerLabel) ora comanda «\(action.label)»")
+            }
             var bindings = library.controlMap.bindings.filter { b in
                 !(b.action == action && b.kind == binding.kind)
                     && !(b.kind == binding.kind && b.channel == binding.channel && b.number == binding.number)

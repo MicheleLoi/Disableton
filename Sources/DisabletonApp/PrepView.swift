@@ -31,8 +31,6 @@ struct PrepView: View {
 
 struct SetlistColumn: View {
     @EnvironmentObject var model: AppModel
-    @State private var confirmDelete = false
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Scaletta")
@@ -66,7 +64,10 @@ struct SetlistColumn: View {
                         }
                         .tag(song.id)
                         .contextMenu {
-                            Button("Elimina brano") { model.deleteSong(song.id) }
+                            Button("Elimina brano…") {
+                                model.selectedSongID = song.id
+                                model.confirmDeleteSong = true
+                            }
                         }
                     }
                     .onMove { offsets, destination in
@@ -79,7 +80,7 @@ struct SetlistColumn: View {
                 Button { model.addSong() } label: { Image(systemName: "plus") }
                     .help("Nuovo brano")
                     .accessibilityLabel("Nuovo brano")
-                Button { confirmDelete = true } label: { Image(systemName: "minus") }
+                Button { model.confirmDeleteSong = true } label: { Image(systemName: "minus") }
                     .disabled(model.selectedSongIndex == nil)
                     .help("Elimina il brano selezionato")
                     .accessibilityLabel("Elimina il brano selezionato")
@@ -101,12 +102,12 @@ struct SetlistColumn: View {
                 .padding(.horizontal, 12)
                 .padding(.bottom, 10)
         }
-        .confirmationDialog(deleteTitle, isPresented: $confirmDelete) {
+        .confirmationDialog(deleteTitle, isPresented: $model.confirmDeleteSong) {
             Button("Elimina", role: .destructive) {
                 if let id = model.selectedSongID { model.deleteSong(id) }
             }
         } message: {
-            Text("I groove restano nella libreria. I brani successivi scalano di un numero (e di un Program Change).")
+            Text("I groove restano nella libreria. I brani successivi scalano di un numero (e di un Program Change). Si può annullare con ⌘Z.")
         }
     }
 
@@ -137,10 +138,13 @@ struct SongSequence: View {
                             }
                         }
                         .frame(width: 140)
-                        Button { model.perform(.selectSong(songIndex)) } label: {
-                            Label("Seleziona", systemImage: "scope")
+                    }
+                    if model.isPlaying, model.snapshot?.status.songIndex != songIndex, model.snapshot?.previewing != true {
+                        HStack(spacing: 10) {
+                            Text("Sta suonando un altro brano.").foregroundColor(.secondary)
+                            Button("Passa a questo brano") { model.perform(.selectSong(songIndex)) }
+                                .help("Cambia brano alla prossima battuta, come un Program Change dal Krome")
                         }
-                        .help("Rende questo il brano corrente, come un Program Change dal Krome")
                     }
 
                     Text("Groove del brano, in ordine").font(.caption.weight(.semibold)).foregroundColor(.secondary)
@@ -149,7 +153,7 @@ struct SongSequence: View {
                         ForEach(Array(song.slots.enumerated()), id: \.element.id) { index, slot in
                             SlotCard(songIndex: songIndex, index: index, slot: slot)
                         }
-                        Text(song.slots.isEmpty ? "Trascina qui un groove dalla libreria" : "Trascina qui un groove")
+                        Text(song.slots.isEmpty ? "Trascina qui un groove dalla libreria (o usa ⊕)" : "Trascina qui un groove")
                             .font(.callout)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -183,6 +187,8 @@ struct SlotCard: View {
     private var isCurrentSong: Bool { model.snapshot?.status.songIndex == songIndex }
     private var playing: Bool { isCurrentSong && model.snapshot?.status.playingSlot == index }
     private var pending: Bool { isCurrentSong && model.snapshot?.status.pendingSlot == index }
+    private var armed: Bool { isCurrentSong && model.snapshot?.status.armedSlot == index }
+    @State private var dropTargeted = false
     private var selected: Bool { model.selectedSlotID == slot.id }
     private var isAutoStart: Bool {
         model.library.songs.indices.contains(songIndex) && model.library.songs[songIndex].autoStartSlot == index
@@ -204,10 +210,12 @@ struct SlotCard: View {
     private var fillColor: Color {
         if playing { return Color.green.opacity(0.25) }
         if pending { return Color.orange.opacity(0.25) }
+        if armed { return Color.blue.opacity(0.18) }
         return Color.gray.opacity(0.1)
     }
 
     private var borderColor: Color {
+        if dropTargeted { return Color.accentColor }
         if selected { return Color.accentColor }
         if playing { return Color.green }
         if pending { return Color.orange }
@@ -215,18 +223,32 @@ struct SlotCard: View {
     }
 
     var body: some View {
-        Button {
-            model.selectedSlotID = slot.id
-        } label: {
-            cardContent
-        }
-        .buttonStyle(.plain)
-        .contextMenu {
-            Button("Suona dal Krome (prova)") { model.perform(.triggerSlot(index)) }
-            Button("Rimuovi dal brano") {
+        ZStack(alignment: .topTrailing) {
+            Button {
                 model.selectedSlotID = slot.id
-                model.removeSelectedSlot()
+            } label: {
+                cardContent
             }
+            .buttonStyle(.plain)
+            Button { model.removeSlot(id: slot.id) } label: {
+                Image(systemName: "xmark.circle.fill").foregroundColor(.secondary)
+            }
+            .buttonStyle(.borderless)
+            .padding(6)
+            .help("Togli dal brano (il groove resta nella libreria; ⌘Z per annullare)")
+            .accessibilityLabel("Togli \(model.displayName(of: slot)) dal brano")
+        }
+        .onDrag {
+            model.draggingSlotID = slot.id
+            model.draggingGrooveID = nil
+            return NSItemProvider(object: slot.id.uuidString as NSString)
+        }
+        .onDrop(of: [UTType.plainText, UTType.text], isTargeted: $dropTargeted) { _ in
+            model.handleSlotDrop(onto: index)
+        }
+        .contextMenu {
+            Button("Fai partire questo groove") { model.playSlot(index) }
+            Button("Togli dal brano") { model.removeSlot(id: slot.id) }
         }
     }
 
@@ -236,6 +258,7 @@ struct SlotCard: View {
                 Text(header).font(.caption).foregroundColor(.secondary)
                 Spacer()
                 if isAutoStart { autoStartBadge }
+                Color.clear.frame(width: 18, height: 1)
             }
             Text(model.displayName(of: slot))
                 .font(.headline)
@@ -299,6 +322,12 @@ struct LibraryStrip: View {
                 TextField("Cerca", text: $search)
                     .textFieldStyle(.roundedBorder)
                     .frame(minWidth: 120, maxWidth: 220)
+                if !search.isEmpty {
+                    Button { search = "" } label: { Image(systemName: "xmark.circle.fill") }
+                        .buttonStyle(.borderless)
+                        .help("Svuota la ricerca")
+                        .accessibilityLabel("Svuota la ricerca")
+                }
                 Spacer(minLength: 0)
             }
 
@@ -308,6 +337,9 @@ struct LibraryStrip: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer()
             } else {
+                if filtered.isEmpty {
+                    Text("Nessun groove trovato per «\(search)».").foregroundColor(.secondary)
+                }
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: 8)], alignment: .leading, spacing: 8) {
                         ForEach(filtered) { record in
@@ -350,7 +382,7 @@ struct GrooveChip: View {
                 Image(systemName: previewing ? "stop.fill" : "play.fill")
             }
             .buttonStyle(.borderless)
-            .help(previewing ? "Ferma l'ascolto" : "Ascolta")
+            .help(previewing ? "Ferma l'ascolto" : "Ascolta il groove da solo")
             .accessibilityLabel(previewing ? "Ferma \(record.name)" : "Ascolta \(record.name)")
             VStack(alignment: .leading, spacing: 1) {
                 Text(record.name).lineLimit(1)
@@ -373,6 +405,7 @@ struct GrooveChip: View {
         .contentShape(Rectangle())
         .onDrag {
             model.draggingGrooveID = record.id
+            model.draggingSlotID = nil
             return NSItemProvider(object: record.id.uuidString as NSString)
         }
         .contextMenu {
@@ -391,8 +424,8 @@ struct GrooveChip: View {
 
     private var deleteMessage: String {
         let songs = model.library.songsUsing(grooveID: record.id)
-        guard !songs.isEmpty else { return "Il groove non è usato in nessun brano." }
-        return "Verrà tolto anche da: " + songs.joined(separator: ", ") + "."
+        guard !songs.isEmpty else { return "Il groove non è usato in nessun brano. Si può annullare con ⌘Z." }
+        return "Verrà tolto anche da: " + songs.joined(separator: ", ") + ". Si può annullare con ⌘Z."
     }
 
     private func subtitle(_ groove: Groove?) -> String {
@@ -454,19 +487,25 @@ struct SlotInspector: View {
                             .help("Sposta dopo")
                         Spacer()
                         Button(role: .destructive) { model.removeSelectedSlot() } label: {
-                            Label("Rimuovi", systemImage: "trash")
+                            Label("Togli dal brano", systemImage: "xmark")
                         }
                     }
+
+                    Button { model.playSlot(k) } label: {
+                        Label("Fai partire nel brano", systemImage: "play.circle")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .controlSize(.large)
+                    .help("Come il tasto del Krome: alla prossima battuta, oppure subito con il clock interno se è tutto fermo")
 
                     if let record = model.library.groove(id: slot.grooveID) {
                         Button {
                             model.togglePreview(record)
                         } label: {
-                            Label(model.previewingGrooveID == record.id ? "Ferma ascolto" : "Ascolta a \(Int(model.previewBPM)) BPM",
+                            Label(model.previewingGrooveID == record.id ? "Ferma ascolto" : "Ascolta da solo a \(Int(model.previewBPM)) BPM",
                                   systemImage: model.previewingGrooveID == record.id ? "stop.fill" : "play.fill")
                                 .frame(maxWidth: .infinity)
                         }
-                        .controlSize(.large)
                         Slider(value: $model.previewBPM, in: 40...240, step: 1) { Text("Tempo") }
                         Button("Dettagli del groove…") { model.detailGrooveID = record.id }
                     }

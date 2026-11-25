@@ -17,6 +17,8 @@ public struct LiveSnapshot: Equatable {
     /// Clock interno attivo (prova senza Krome).
     public var internalClock: Bool
     public var lastCommand: String?
+    /// Ultimo messaggio MIDI ricevuto non associato ad alcun comando (es. canale sbagliato).
+    public var lastUnmapped: String?
     /// Ascolto di un singolo groove in corso.
     public var previewing: Bool
     public var learning: Bool
@@ -57,6 +59,7 @@ public final class LiveHost {
     private var output = SoundOutput.ezdrummer
     private var outputDescription = ""
     private var synth: AnyObject?
+    private var lastUnmapped: MIDIMessage?
 
     public init(songs: [EngineSong], controlMap: ControlMap, outputChannel: Int,
                 settings: PlaybackController.Settings, inputFilter: String?,
@@ -72,6 +75,9 @@ public final class LiveHost {
         }
         backend.onMessage = { [weak self] message, time in
             self?.receive(message, at: time)
+        }
+        controller.onUnmappedMessage = { [weak self] message in
+            self?.lastUnmapped = message
         }
         connected = try backend.connectSources(matching: inputFilter)
         configureOutput(output, destinationFilter: destinationFilter)
@@ -110,6 +116,7 @@ public final class LiveHost {
                             clockReceiving: receiving,
                             internalClock: internalMode == .transport,
                             lastCommand: controller.lastCommand?.description,
+                            lastUnmapped: lastUnmapped?.description,
                             previewing: internalMode == .preview,
                             learning: learning,
                             realtimePriority: realtimeGranted,
@@ -153,7 +160,7 @@ public final class LiveHost {
         }
         switch output {
         case .ezdrummer:
-            outputDescription = "EZdrummer 3 (porta \"\(LiveHost.virtualPortName)\")"
+            outputDescription = "Porta virtuale \"\(LiveHost.virtualPortName)\""
         case .midiDestination:
             let names = backend.setDestinations(matching: destinationFilter)
             outputDescription = names.isEmpty
@@ -173,9 +180,18 @@ public final class LiveHost {
         controller.perform(action, now: HostClock.nowNanos())
     }
 
+    /// Emergenza: silenzio immediato. Ferma ascolto e clock interno; con il Krome il groove
+    /// si ferma subito (il trasporto del Krome continua, un nuovo comando fa ripartire).
     public func panic() {
         lock.lock(); defer { lock.unlock() }
-        for m in controller.engine.panic() { route(m, at: 0) }
+        stopInternalLocked(now: HostClock.nowNanos())
+        for m in controller.engine.silenceNow() { route(m, at: 0) }
+    }
+
+    /// Cambia il tempo del clock interno (o dell'ascolto) senza ricominciare.
+    public func setInternalBPM(_ bpm: Double) {
+        lock.lock(); defer { lock.unlock() }
+        if let clock = internalClock { internalClock = clock.retimed(bpm: bpm) }
     }
 
     // MARK: - Clock interno

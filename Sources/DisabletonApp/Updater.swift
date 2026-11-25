@@ -61,7 +61,8 @@ final class Updater {
 
     /// Scarica, verifica e installa. In caso di successo l'app si chiude e riparte aggiornata;
     /// altrimenti `failure` riceve il motivo (sulla coda principale).
-    static func downloadAndInstall(_ release: ReleaseInfo, log: @escaping (String) -> Void,
+    static func downloadAndInstall(_ release: ReleaseInfo, canInstall: @escaping () -> Bool,
+                                   log: @escaping (String) -> Void,
                                    failure: @escaping (String) -> Void) {
         let work = FileManager.default.temporaryDirectory.appendingPathComponent("Disableton-aggiornamento-\(UUID().uuidString)")
         var request = URLRequest(url: release.appZipURL, timeoutInterval: 120)
@@ -90,6 +91,11 @@ final class Updater {
                     return fail("La firma dell'app scaricata non è valida")
                 }
                 DispatchQueue.main.async {
+                    // Ricontrollo finale: se nel frattempo è partita la musica, non si chiude l'app.
+                    guard canInstall() else {
+                        failure("Installazione rimandata: Disableton sta suonando. Riprova a riproduzione ferma.")
+                        return
+                    }
                     log("Aggiornamento \(release.version) scaricato e verificato: installazione")
                     install(newApp: newApp, work: work, failure: failure)
                 }

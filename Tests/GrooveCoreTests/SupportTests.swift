@@ -73,3 +73,43 @@ final class SupportTests: XCTestCase {
         XCTAssertEqual(CrashReports.excerpt(of: found[0]), "crash")
     }
 }
+
+final class StopAndUndoSupportTests: XCTestCase {
+    func testSilenceNowStopsGrooveButKeepsTransport() {
+        let engine = GrooveEngine()
+        engine.load(song: EngineSong(name: "A", slots: [EngineSlot(name: "a", groove: groove("a", [(0, 36), (960, 38)]))]))
+        engine.transportStarted(at: 0)
+        _ = engine.render(to: 100)
+        let messages = engine.silenceNow()
+        XCTAssertEqual(messages.last, .controlChange(channel: 9, controller: 123, value: 0))
+        XCTAssertTrue(engine.isRunning)
+        XCTAssertNil(engine.playingSlotIndex)
+        XCTAssertTrue(engine.render(to: 4 * 3840).isEmpty)
+        engine.trigger(slot: 0)
+        XCTAssertFalse(engine.render(to: 8 * 3840).isEmpty)
+    }
+
+    func testClockRetimeContinuesWithoutRestart() {
+        var gen = ClockGenerator(bpm: 120, startTime: 0)
+        _ = gen.ticks(upTo: 100_000_000)
+        let last = gen.lastTickTime!
+        var faster = gen.retimed(bpm: 240)
+        let next = faster.ticks(upTo: last + 30_000_000)
+        XCTAssertEqual(next.first, last + 10_416_667)
+        XCTAssertNil(ClockGenerator(bpm: 120, startTime: 5).lastTickTime)
+    }
+
+    func testDeletedGrooveFileCanBeRestored() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try LibraryStore(root: root)
+        let track: [UInt8] = [0x00, 0x99, 36, 100, 0x60, 0x89, 36, 0, 0x00, 0xFF, 0x2F, 0x00]
+        let record = try store.importGroove(data: Data(smf(ppq: 96, tracks: [track])), name: "Prova", source: .user)
+        let before = store.library
+        try store.deleteGroove(id: record.id)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: store.groovesDirectory.appendingPathComponent(record.fileName).path))
+        store.library = before           // "Annulla"
+        store.restoreDeletedFiles()
+        XCTAssertNotNil(try? store.loadGroove(record))
+    }
+}

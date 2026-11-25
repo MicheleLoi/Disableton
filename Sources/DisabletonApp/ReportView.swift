@@ -94,7 +94,7 @@ struct SupportSection: View {
         case .upToDate:
             Text("Disableton è aggiornato.").foregroundColor(.secondary)
         case let .available(release):
-            Button("Installa la versione \(release.version.description) e riavvia") { model.installUpdate() }
+            Button("Installa la versione \(release.version.description) e riavvia") { model.requestInstallUpdate() }
         case let .downloading(release):
             Text("Scarico la versione \(release.version.description)…").foregroundColor(.secondary)
         case let .failed(message):
@@ -110,7 +110,7 @@ struct UpdateBadge: View {
     var body: some View {
         if case let .available(release) = model.updateState {
             Button {
-                model.installUpdate()
+                model.requestInstallUpdate()
             } label: {
                 Label("Aggiorna a \(release.version.description)", systemImage: "arrow.down.circle.fill")
             }

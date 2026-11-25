@@ -7,6 +7,7 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
+    @State private var confirmRestart = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -14,7 +15,7 @@ struct SettingsView: View {
                 Text("Impostazioni").font(.title2.bold())
                 Spacer()
                 Button("Fine") { dismiss() }
-                    .keyboardShortcut(.defaultAction)
+                    .keyboardShortcut(.cancelAction)
             }
             .padding(20)
             Divider()
@@ -77,6 +78,7 @@ struct SettingsView: View {
                 } label: {
                     Label("Avvia", systemImage: "play.fill")
                 }
+                .disabled(internalRunning || model.isKromePlaying || model.selectedSongIndex == nil)
                 Button {
                     model.stopInternalClock()
                 } label: {
@@ -84,7 +86,7 @@ struct SettingsView: View {
                 }
                 .disabled(!internalRunning)
             }
-            Text("Suona il brano selezionato come se il Krome avesse premuto Start. I comandi dal Krome (note, pedale, Program Change) continuano a funzionare; il suo clock viene ignorato finché premi Ferma.")
+            Text("Suona il brano selezionato in scaletta come se il Krome avesse premuto Start (si avvia anche con ▶ nella barra in alto o ⌘R). I comandi dal Krome (note, pedale, Program Change) continuano a funzionare; il suo clock viene ignorato finché premi Ferma.")
                 .font(.caption).foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -96,9 +98,9 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Suono della batteria").font(.headline)
             Picker("Destinazione", selection: $model.library.performance.soundOutput) {
-                Text("EZdrummer 3 (porta virtuale “\(LiveHost.virtualPortName)”)").tag(SoundOutput.ezdrummer)
+                Text("Porta virtuale “\(LiveHost.virtualPortName)” (EZdrummer o altri strumenti software)").tag(SoundOutput.ezdrummer)
                 Text("Sintetizzatore integrato di macOS (suoni di prova)").tag(SoundOutput.builtInSynth)
-                Text("Kit di batteria del Krome o altra destinazione MIDI").tag(SoundOutput.midiDestination)
+                Text("Strumento MIDI collegato (Krome o altro synth)").tag(SoundOutput.midiDestination)
             }
             .pickerStyle(.radioGroup)
             .labelsHidden()
@@ -111,11 +113,11 @@ struct SettingsView: View {
                     }
                 }
                 .frame(maxWidth: 420)
-                Text("Sul Krome usa una traccia con un kit di batteria che riceve sul canale scelto qui sotto.")
+                Text("Lo strumento deve suonare la batteria sul canale scelto qui sotto (es. sul Krome una traccia con un kit di batteria).")
                     .font(.caption).foregroundColor(.secondary)
             }
             if model.library.performance.soundOutput == .ezdrummer {
-                Text("In EZdrummer 3: Settings → MIDI → abilita l'ingresso “\(LiveHost.virtualPortName)”.")
+                Text("Nello strumento software (es. EZdrummer 3: Settings → MIDI) abilita l'ingresso “\(LiveHost.virtualPortName)”.")
                     .font(.caption).foregroundColor(.secondary)
             }
             Text("Uscita attuale: " + (model.snapshot?.outputDescription ?? "–"))
@@ -146,7 +148,12 @@ struct SettingsView: View {
             Text(model.libraryFolder.path).font(.callout).textSelection(.enabled)
             HStack {
                 Button("Mostra nel Finder") { model.showLibraryInFinder() }
-                Button("Riavvia motore MIDI") { model.startEngine() }
+                Button("Riavvia motore MIDI…") { confirmRestart = true }
+                    .confirmationDialog("Riavviare il motore MIDI?", isPresented: $confirmRestart) {
+                        Button("Riavvia", role: .destructive) { model.startEngine() }
+                    } message: {
+                        Text(model.isPlaying ? "Sta suonando: la riproduzione si interromperà." : "Le porte MIDI verranno ricollegate.")
+                    }
             }
             Text(engineLine).font(.caption).foregroundColor(.secondary)
         }

@@ -187,6 +187,7 @@ struct KeyLegend: View {
 /// SW1, SW2, pedale, Program Change e ogni comando che non è una nota sul canale 16.
 struct OtherControls: View {
     @EnvironmentObject var model: AppModel
+    @State private var confirmReset = false
 
     var body: some View {
         let entries = model.library.controlMap.bindings.enumerated().filter { _, b in
@@ -204,7 +205,12 @@ struct OtherControls: View {
                     Label("Aggiungi comando", systemImage: "plus")
                 }
                 .frame(width: 190)
-                Button("Ripristina predefiniti") { model.resetBindings() }
+                Button("Ripristina predefiniti…") { confirmReset = true }
+                    .confirmationDialog("Ripristinare i comandi predefiniti?", isPresented: $confirmReset) {
+                        Button("Ripristina", role: .destructive) { model.resetBindings() }
+                    } message: {
+                        Text("Le associazioni imparate (tasti, SW1, SW2, pedale…) verranno sostituite da quelle predefinite. Si può annullare con ⌘Z.")
+                    }
             }
             if case let .new(action)? = model.learningTarget {
                 HStack {
@@ -234,6 +240,8 @@ struct OtherControls: View {
                                 Image(systemName: "trash")
                             }
                             .buttonStyle(.borderless)
+                            .disabled(model.learningTarget != nil)
+                            .help("Elimina il comando (⌘Z per annullare)")
                             .accessibilityLabel("Elimina comando")
                         }
                     }
@@ -287,6 +295,12 @@ struct KeyInspector: View {
             }
 
             if let action {
+                Button {
+                    model.tryAction(action)
+                } label: {
+                    Label("Prova: \(action.label)", systemImage: "play.circle")
+                }
+                .help("Esegue il comando come se arrivasse dal Krome")
                 if model.learningTarget == .new(action) {
                     Text("Premi un tasto o un controllo sul Krome…").foregroundColor(.orange)
                     Button("Annulla") { model.cancelLearn() }
@@ -299,9 +313,13 @@ struct KeyInspector: View {
             }
 
             Spacer()
-            Text("Ultimo messaggio: " + (model.snapshot?.lastCommand ?? "–"))
+            Text("Ultimo comando ricevuto: " + (model.snapshot?.lastCommand ?? "–"))
                 .font(.caption)
                 .foregroundColor(.secondary)
+            Text("Ultimo messaggio non associato: " + (model.snapshot?.lastUnmapped ?? "–"))
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .help("Se premi un tasto del Krome e compare qui, il tasto non ha un comando (o è su un altro canale)")
         }
         .padding(16)
         .background(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.35)))

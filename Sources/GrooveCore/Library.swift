@@ -288,14 +288,31 @@ public final class LibraryStore {
         return record
     }
 
-    /// Elimina un groove, i suoi slot nei brani e il file copiato.
+    /// Cartella dove finiscono i file dei groove eliminati (per poter annullare l'eliminazione).
+    public var deletedDirectory: URL { groovesDirectory.appendingPathComponent("eliminati", isDirectory: true) }
+
+    /// Elimina un groove e i suoi slot nei brani. Il file viene spostato in `grooves/eliminati`,
+    /// così l'eliminazione si può annullare.
     public func deleteGroove(id: UUID) throws {
         guard let record = library.groove(id: id) else { return }
         library.removeGroove(id: id)
         grooveCache[id] = nil
         let url = groovesDirectory.appendingPathComponent(record.fileName)
-        if FileManager.default.fileExists(atPath: url.path) {
-            try FileManager.default.removeItem(at: url)
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        try FileManager.default.createDirectory(at: deletedDirectory, withIntermediateDirectories: true)
+        let target = deletedDirectory.appendingPathComponent(record.fileName)
+        try? FileManager.default.removeItem(at: target)
+        try FileManager.default.moveItem(at: url, to: target)
+    }
+
+    /// Riporta nella libreria i file di groove eliminati che la libreria usa di nuovo (dopo un "Annulla").
+    public func restoreDeletedFiles() {
+        for record in library.grooves {
+            let url = groovesDirectory.appendingPathComponent(record.fileName)
+            let deleted = deletedDirectory.appendingPathComponent(record.fileName)
+            if !FileManager.default.fileExists(atPath: url.path), FileManager.default.fileExists(atPath: deleted.path) {
+                try? FileManager.default.moveItem(at: deleted, to: url)
+            }
         }
     }
 

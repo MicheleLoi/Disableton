@@ -26,9 +26,22 @@ struct StageView: View {
                     Circle().fill(clockColor(snap)).frame(width: 16, height: 16)
                     Text(clockText(snap)).font(.system(size: 22, weight: .semibold))
                 }
+                if let label = model.stopLabel {
+                    Button { model.stopPlayback() } label: {
+                        Label(label, systemImage: "stop.fill")
+                    }
+                    .padding(.leading, 20)
+                }
+                Button { model.panic() } label: {
+                    Text("PANIC").fontWeight(.bold).foregroundColor(.white)
+                        .padding(.horizontal, 12).padding(.vertical, 5)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(Color(red: 0.75, green: 0.11, blue: 0.11)))
+                }
+                .buttonStyle(.plain)
+                .help("Silenzio immediato (⇧⌘.)")
                 Button("Preparazione") { model.mode = .prep }
                     .keyboardShortcut(.cancelAction)
-                    .padding(.leading, 20)
+                    .padding(.leading, 12)
                 Button { model.toggleFullScreen() } label: {
                     Image(systemName: "arrow.up.left.and.arrow.down.right")
                 }
