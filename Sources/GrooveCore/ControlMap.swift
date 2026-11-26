@@ -102,7 +102,10 @@ public struct ControlBinding: Codable, Hashable, Sendable {
         switch message {
         case let .noteOn(ch, note, _): return ControlBinding(kind: .note, channel: Int(ch) + 1, number: Int(note), action: action)
         case let .controlChange(ch, cc, _): return ControlBinding(kind: .controlChange, channel: Int(ch) + 1, number: Int(cc), action: action)
-        case let .programChange(ch, p): return ControlBinding(kind: .programChange, channel: Int(ch) + 1, number: Int(p), action: action)
+        case let .programChange(ch, p):
+            // "Brano dal Program Change" vale per qualsiasi numero: si impara solo il canale.
+            let number: Int? = action == .selectSongFromProgram ? nil : Int(p)
+            return ControlBinding(kind: .programChange, channel: Int(ch) + 1, number: number, action: action)
         default: return nil
         }
     }

@@ -300,6 +300,15 @@ final class PlaybackControllerTests: XCTestCase {
         XCTAssertEqual(controller.engine.pendingSlotIndex, 2)
     }
 
+    func testLearningProgramChangeSongSelectKeepsAnyNumber() {
+        let b = ControlBinding.learn(from: .programChange(channel: 0, program: 7), action: .selectSongFromProgram)
+        XCTAssertEqual(b?.channel, 1)
+        XCTAssertNil(b?.number)
+        let map = ControlMap(bindings: [b!])
+        XCTAssertEqual(map.action(for: .programChange(channel: 0, program: 3)), .selectSong(3))
+        XCTAssertEqual(ControlBinding.learn(from: .programChange(channel: 0, program: 7), action: .fill)?.number, 7)
+    }
+
     func testStartActionRoundTrip() {
         XCTAssertEqual(ControlAction(string: "start"), .start)
         XCTAssertEqual(ControlAction.start.description, "start")
