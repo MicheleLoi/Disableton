@@ -79,7 +79,7 @@ extension TimeSignature {
 /// Nota predefinita sul Krome per lo slot `index` (canale 16).
 func defaultNoteLabel(forSlot index: Int) -> String? {
     guard index < 12 else { return nil }
-    let note = 36 + index
+    let note = 24 + index
     return "\(NoteName.korg(UInt8(note))) (\(note))"
 }
 #endif

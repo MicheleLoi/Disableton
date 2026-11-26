@@ -92,8 +92,8 @@ func runEndToEnd(_ argv: [String]) throws {
         HostClock.wait(untilNanos: start1 - 2_000_000)
         krome.send(.start, atNanos: 0)
         play(clocks: stopAt, from: start1, commands: [
-            switchAt: .noteOn(channel: 15, note: 37, velocity: 100),
-            fillAt: .noteOn(channel: 15, note: 26, velocity: 100),
+            switchAt: .noteOn(channel: 15, note: 25, velocity: 100),
+            fillAt: .noteOn(channel: 15, note: 38, velocity: 100),
         ])
         // Stop poco dopo l'ultimo impulso, prima del battere successivo.
         HostClock.wait(untilNanos: start1 + UInt64(Double(stopAt - 1) * nsPerClock) + 5_000_000)
