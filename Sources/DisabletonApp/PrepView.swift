@@ -524,7 +524,7 @@ struct SlotInspector: View {
                         Button("Dettagli del groove…") { model.detailGrooveID = record.id }
                     }
 
-                    Text("Le modifiche fatte mentre il Krome suona valgono dal prossimo Stop.")
+                    Text("Le modifiche fatte mentre la batteria suona valgono appena si ferma o tace (Stop, Silenzio a fine battuta, Finale).")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

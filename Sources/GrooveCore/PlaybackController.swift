@@ -203,6 +203,9 @@ public final class PlaybackController {
     /// Da chiamare a intervalli brevi (≤ 1 ms) da un thread ad alta priorità.
     public func process(now: UInt64) {
         defer { notifyIfNeeded() }
+        // Modifiche ai brani fatte mentre suonava: si applicano appena la batteria tace
+        // (dopo uno stop, un finale o un panic), anche se il Krome non manda Stop.
+        if reloadPending, engine.isSilentWhileRunning { reloadCurrentSong() }
         guard engine.isRunning,
               let lastTick = follower.lastSongTick,
               let horizon = follower.songTick(atTime: now &+ settings.lookaheadNs &+ settings.latencyCompensationNs)

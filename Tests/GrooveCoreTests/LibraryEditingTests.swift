@@ -151,6 +151,22 @@ final class ClockGeneratorAndLearnTests: XCTestCase {
 }
 
 final class ReloadWhilePlayingTests: XCTestCase {
+    /// Con il clock che continua (Combi, Avvia) le modifiche si applicano quando la batteria tace.
+    func testPendingReloadAppliesWhenSilentWithoutStop() {
+        let g = Groove(name: "g", timeSignature: .fourFour, lengthTicks: 3840,
+                       events: [GrooveEvent(tick: 0, kind: .noteOn(note: 36, velocity: 100))])
+        let six = TimeSignature(6, 8)
+        let controller = PlaybackController(songs: [EngineSong(name: "A", timeSignature: six,
+                                                               slots: [EngineSlot(name: "g", groove: g)])]) { _, _ in }
+        controller.handle(.start, at: 0, now: 0)
+        controller.handle(.timingClock, at: 0, now: 0)
+        controller.replaceSongs([EngineSong(name: "A", timeSignature: .fourFour, slots: [EngineSlot(name: "g", groove: g)])])
+        XCTAssertEqual(controller.engine.song?.timeSignature, six) // sta suonando: invariato
+        _ = controller.engine.silenceNow()
+        controller.process(now: 0)
+        XCTAssertEqual(controller.engine.song?.timeSignature, .fourFour)
+    }
+
     func testSongsReplacedWhilePlayingApplyAtStop() {
         let a = groove("a", [(0, 36)])
         let b = groove("b", [(0, 42)])
