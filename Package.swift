@@ -13,7 +13,7 @@ let package = Package(
     targets: [
         // Nucleo indipendente dalla piattaforma: file MIDI, groove, clock, motore, libreria.
         .target(name: "GrooveCore"),
-        // Livello MIDI di macOS (CoreMIDI): ingresso dal Krome, porta virtuale, thread di generazione.
+        // Livello MIDI di macOS (CoreMIDI): ingresso dalla workstation, porta virtuale, thread di generazione.
         .target(name: "MIDIHost", dependencies: ["GrooveCore"]),
         // Groove di prova per test e verifiche: non fa parte dell'app.
         .target(name: "TestMaterial", dependencies: ["GrooveCore"]),

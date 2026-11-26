@@ -72,7 +72,7 @@ final class LibraryEditingTests: XCTestCase {
 
     func testLibraryJSONRoundTripKeepsSettings() throws {
         var (lib, _, _) = makeLibrary()
-        lib.performance = PerformanceSettings(inputFilter: "KROME", latencyMs: 4.5, lookaheadMs: 3)
+        lib.performance = PerformanceSettings(inputFilter: "WORKSTATION", latencyMs: 4.5, lookaheadMs: 3)
         let data = try JSONEncoder().encode(lib)
         XCTAssertEqual(try JSONDecoder().decode(Library.self, from: data), lib)
         // File scritti da versioni precedenti (senza id degli slot né impostazioni) restano leggibili.

@@ -47,7 +47,7 @@ final class DemoAndWriterTests: XCTestCase {
     }
 
     func testOldSettingsDecodeWithDefaults() throws {
-        let json = #"{"inputFilter":"KROME","latencyMs":3}"#
+        let json = #"{"inputFilter":"WORKSTATION","latencyMs":3}"#
         let s = try JSONDecoder().decode(PerformanceSettings.self, from: Data(json.utf8))
         XCTAssertEqual(s.soundOutput, .virtualPort)
         XCTAssertNil(s.destinationFilter)

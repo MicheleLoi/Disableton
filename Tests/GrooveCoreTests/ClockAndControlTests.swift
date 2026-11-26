@@ -193,7 +193,7 @@ final class PlaybackControllerTests: XCTestCase {
         XCTAssertEqual(count, 5) // colpi fino al tick 23*40 + 3840 = 4760: 0, 960, 1920, 2880, 3840
     }
 
-    /// "Avvia" con il clock del Krome in corso ma senza Start (Combi): la batteria parte
+    /// "Avvia" con il clock della workstation in corso ma senza Start (Combi): la batteria parte
     /// sull'impulso più vicino e segue il clock; un secondo "Avvia" non la fa ripartire.
     func testStartCommandFollowsRunningClockWithoutStart() {
         let verse = groove("strofa", [(0, 36), (960, 38)])

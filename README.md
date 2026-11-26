@@ -14,7 +14,7 @@ Le scelte di progetto sono descritte in [docs/ARCHITETTURA.md](docs/ARCHITETTURA
 
 | Parte | Stato |
 |---|---|
-| Nucleo (`GrooveCore`): file MIDI, groove, clock, motore groove/fill, comandi, libreria, modifica della libreria, MIDI Learn, clock interno per l'ascolto | compila; 69 test superati |
+| Nucleo (`GrooveCore`): file MIDI, groove, clock, motore groove/fill, comandi, libreria, modifica della libreria, MIDI Learn, clock interno per l'ascolto | compila; 75 test superati |
 | Livello MIDI di macOS (`MIDIHost`): ingresso dalla workstation, porta virtuale, thread di generazione | verificato in compilazione su GitHub (macOS); **da provare con la workstation** |
 | App (`DisabletonApp`, SwiftUI): Preparazione, Comandi, Palco, Impostazioni | compilata e avviata su GitHub (con schermate); **da provare sul Mac** |
 | Catena MIDI completa (workstation simulata → Disableton → strumento simulato) | verificata su GitHub a 120 e 87 BPM: note e tempi corretti |
@@ -44,7 +44,7 @@ Ogni versione che supera tutte le verifiche viene pubblicata come release su Git
 
 Dopo la prima installazione non serve più scaricare a mano: all'avvio Disableton controlla se c'è
 una nuova versione e mostra **Aggiorna a …** in alto; un clic la scarica, la verifica,
-sostituisce l'app e la riavvia (non durante l'esecuzione: prima va fermato la workstation).
+sostituisce l'app e la riavvia (non durante l'esecuzione: prima va fermata la workstation).
 
 ## Segnalare un problema
 
