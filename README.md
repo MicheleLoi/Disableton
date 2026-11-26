@@ -157,8 +157,8 @@ Avvia il sequencer del Krome: il primo groove parte sul primo battere. Con note 
 | C2 | 36 | avvia: la batteria parte al tempo del Krome anche senza Start (es. in Combi); ignorato se sta già suonando |
 | C#2 / D#2 | 37 / 39 | groove precedente / successivo |
 | D2 | 38 | fill, poi ritorno al groove precedente |
-| E2 | 40 | silenzio dalla battuta successiva |
-| F2 | 41 | panic (spegne tutte le note) |
+| E2 | 40 | pausa: silenzio dalla battuta successiva, si riprende a tempo con un loop o Avvia |
+| F2 | 41 | stop vero: la batteria si ferma subito e riparte con Avvia (succede da solo anche dopo il Finale) |
 | F#2 / G#2 | 42 / 44 | brano precedente / successivo |
 | G2 | 43 | finale: il groove «Finale, poi silenzio» del brano (senza finale: silenzio a fine battuta) |
 | Program Change n | – | brano n+1 |

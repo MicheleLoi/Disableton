@@ -164,11 +164,21 @@ public final class PlaybackController {
         case .nextSlot: engine.triggerNextSlot()
         case .previousSlot: engine.triggerPreviousSlot()
         case .stopAtBarEnd: engine.stopAtNextBar()
+        case .stopNow: stopTransport(now: now)
         case .panic: for m in engine.panic() { output(m, now) }
         case .start: startFromCommand(now: now)
         case .intensity: break // comando continuo: gestito in `handle` con il valore del controller
         }
         notifyIfNeeded()
+    }
+
+    /// Stop vero da comando (o a fine Finale): la batteria si ferma e le modifiche ai brani si
+    /// applicano; riparte con «Avvia», sull'impulso più vicino a quando lo si preme.
+    private func stopTransport(now: UInt64) {
+        guard engine.isRunning else { return }
+        follower.stop()
+        for m in engine.transportStopped() { output(m, now) }
+        if reloadPending { reloadCurrentSong() }
     }
 
     /// Il clock del Krome è arrivato da poco (trasporto avviato o no).
@@ -203,6 +213,8 @@ public final class PlaybackController {
     /// Da chiamare a intervalli brevi (≤ 1 ms) da un thread ad alta priorità.
     public func process(now: UInt64) {
         defer { notifyIfNeeded() }
+        // Finito il Finale, la batteria si ferma davvero (riparte con «Avvia»).
+        if engine.isRunning, engine.finishedEnding { stopTransport(now: now) }
         // Modifiche ai brani fatte mentre suonava: si applicano appena la batteria tace
         // (dopo uno stop, un finale o un panic), anche se il Krome non manda Stop.
         if reloadPending, engine.isSilentWhileRunning { reloadCurrentSong() }

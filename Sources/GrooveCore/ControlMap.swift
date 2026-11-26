@@ -17,6 +17,8 @@ public enum ControlAction: Hashable, Sendable, Codable, CustomStringConvertible 
     case nextSlot
     case previousSlot
     case stopAtBarEnd
+    /// Stop vero: la batteria si ferma subito e riparte solo con «Avvia» (o con lo Start del Krome).
+    case stopNow
     case panic
     /// Fa partire la batteria al tempo del clock del Krome, senza messaggio Start (es. in Combi).
     /// Ignorato se la batteria sta già suonando.
@@ -49,6 +51,7 @@ public enum ControlAction: Hashable, Sendable, Codable, CustomStringConvertible 
         case "nextSlot": self = .nextSlot
         case "previousSlot": self = .previousSlot
         case "stopAtBarEnd": self = .stopAtBarEnd
+        case "stopNow": self = .stopNow
         case "panic": self = .panic
         case "start": self = .start
         case "intensity": self = .intensity
@@ -68,6 +71,7 @@ public enum ControlAction: Hashable, Sendable, Codable, CustomStringConvertible 
         case .nextSlot: return "nextSlot"
         case .previousSlot: return "previousSlot"
         case .stopAtBarEnd: return "stopAtBarEnd"
+        case .stopNow: return "stopNow"
         case .panic: return "panic"
         case .start: return "start"
         case .intensity: return "intensity"
@@ -166,7 +170,7 @@ public struct ControlMap: Codable, Equatable, Sendable {
     /// - Program Change n → brano n+1
     /// - note 24…35 (C1…B1) → slot 1…12
     /// - ottava dei comandi, da C2: 36 (C2) avvia, 37 (C#2) groove precedente, 38 (D2) fill,
-    ///   39 (D#2) groove successivo, 40 (E2) silenzio a fine battuta, 41 (F2) panic,
+    ///   39 (D#2) groove successivo, 40 (E2) pausa a fine battuta, 41 (F2) stop,
     ///   42 (F#2) brano precedente, 43 (G2) finale, 44 (G#2) brano successivo
     /// - nessun controller predefinito: SW1, SW2 e pedale restano liberi (si assegnano con Impara)
     public static let `default`: ControlMap = {
@@ -183,7 +187,7 @@ public struct ControlMap: Codable, Equatable, Sendable {
             ControlBinding(kind: .note, channel: ch, number: 38, action: .fill),
             ControlBinding(kind: .note, channel: ch, number: 39, action: .nextSlot),
             ControlBinding(kind: .note, channel: ch, number: 40, action: .stopAtBarEnd),
-            ControlBinding(kind: .note, channel: ch, number: 41, action: .panic),
+            ControlBinding(kind: .note, channel: ch, number: 41, action: .stopNow),
             ControlBinding(kind: .note, channel: ch, number: 42, action: .previousSong),
             ControlBinding(kind: .note, channel: ch, number: 43, action: .ending),
             ControlBinding(kind: .note, channel: ch, number: 44, action: .nextSong),

@@ -141,6 +141,9 @@ public final class GrooveEngine {
         pending = Pending(slotIndex: index, boundary: boundary(for: slot.quantize))
     }
 
+    /// True quando un groove «Finale, poi silenzio» è appena finito (il brano è concluso).
+    public private(set) var finishedEnding = false
+
     /// True se il trasporto è avviato ma non suona niente e non c'è niente in coda.
     public var isSilentWhileRunning: Bool { isRunning && segment == nil && pending == nil }
 
@@ -179,6 +182,7 @@ public final class GrooveEngine {
     /// Avvio dalla posizione indicata (0 per Start, la posizione SPP per Continue).
     public func transportStarted(at tick: Int) {
         isRunning = true
+        finishedEnding = false
         renderedTo = max(0, tick)
         activeNotes.removeAll()
         pending = nil
@@ -208,6 +212,7 @@ public final class GrooveEngine {
     /// Arresto: restituisce i messaggi per spegnere le note ancora attive.
     public func transportStopped() -> [MIDIMessage] {
         isRunning = false
+        finishedEnding = false
         segment = nil
         pending = nil
         return silenceMessages()
@@ -260,7 +265,9 @@ public final class GrooveEngine {
             switch seg.mode {
             case .oneShotReturn: next = seg.returnSlot
             case .oneShotNext: next = nextIndex(after: seg.slotIndex) ?? seg.returnSlot
-            case .oneShotStop: next = nil
+            case .oneShotStop:
+                next = nil
+                finishedEnding = true
             case .loop: next = seg.slotIndex
             }
         } else {

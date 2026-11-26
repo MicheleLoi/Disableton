@@ -34,7 +34,8 @@ extension ControlAction {
         case .ending: return "Finale (poi silenzio)"
         case .nextSlot: return "Groove successivo"
         case .previousSlot: return "Groove precedente"
-        case .stopAtBarEnd: return "Silenzio a fine battuta"
+        case .stopAtBarEnd: return "Pausa a fine battuta (riprende a tempo)"
+        case .stopNow: return "Stop (ferma; riparte con Avvia)"
         case .panic: return "Panic (spegni tutto)"
         case .start: return "Avvia (al tempo del Krome)"
         case .intensity: return "Intensità della batteria (manopola)"
@@ -43,7 +44,7 @@ extension ControlAction {
 
     /// Azioni proposte nel menu "Aggiungi comando".
     static var menuChoices: [ControlAction] {
-        [.start, .intensity, .fill, .ending, .nextSlot, .previousSlot, .stopAtBarEnd, .nextSong, .previousSong,
+        [.start, .intensity, .fill, .ending, .nextSlot, .previousSlot, .stopAtBarEnd, .stopNow, .nextSong, .previousSong,
          .selectSongFromProgram, .panic] + (0..<12).map { ControlAction.triggerSlot($0) }
     }
 }

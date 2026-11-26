@@ -260,15 +260,12 @@ final class AppModel: ObservableObject {
         guard let snap = snapshot else { return nil }
         if snap.previewing { return "Ferma ascolto" }
         if snap.internalClock { return "Ferma" }
-        if snap.status.transportRunning {
-            if snap.status.stopPending { return nil }
-            return snap.status.playingSlot == nil ? nil : "Silenzio a fine battuta"
-        }
+        if snap.status.transportRunning { return "Stop" }
         return snap.status.armedSlot != nil ? "Annulla avvio" : nil
     }
 
-    /// STOP: ferma ascolto o clock interno; con il Krome mette in coda il silenzio a fine battuta
-    /// (il Krome resta il padrone del trasporto).
+    /// STOP: ferma ascolto o clock interno; con il Krome ferma davvero la batteria (riparte con
+    /// «Avvia» o con un nuovo Start del Krome).
     func stopPlayback() {
         guard let snap = snapshot else { return }
         if snap.previewing {
@@ -276,7 +273,7 @@ final class AppModel: ObservableObject {
         } else if snap.internalClock {
             host?.stopInternalClock()
         } else {
-            perform(.stopAtBarEnd)
+            perform(.stopNow)
         }
         log.log("STOP")
     }
@@ -324,7 +321,7 @@ final class AppModel: ObservableObject {
         switch action {
         case let .triggerSlot(i):
             playSlot(i)
-        case .fill, .ending, .nextSlot, .previousSlot, .stopAtBarEnd:
+        case .fill, .ending, .nextSlot, .previousSlot, .stopAtBarEnd, .stopNow:
             guard isPlaying else {
                 errorMessage = "Avvia prima la riproduzione (Krome, oppure ▶ Prova senza Krome nella barra in alto)."
                 return

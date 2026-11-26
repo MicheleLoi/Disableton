@@ -116,7 +116,7 @@ final class ControlMapTests: XCTestCase {
         XCTAssertEqual(map.action(for: .noteOn(channel: 15, note: 37, velocity: 100)), .previousSlot)
         XCTAssertEqual(map.action(for: .noteOn(channel: 15, note: 39, velocity: 100)), .nextSlot)
         XCTAssertEqual(map.action(for: .noteOn(channel: 15, note: 40, velocity: 100)), .stopAtBarEnd)
-        XCTAssertEqual(map.action(for: .noteOn(channel: 15, note: 41, velocity: 100)), .panic)
+        XCTAssertEqual(map.action(for: .noteOn(channel: 15, note: 41, velocity: 100)), .stopNow)
         XCTAssertEqual(map.action(for: .noteOn(channel: 15, note: 42, velocity: 100)), .previousSong)
         XCTAssertEqual(map.action(for: .noteOn(channel: 15, note: 44, velocity: 100)), .nextSong)
         XCTAssertNil(map.action(for: .noteOn(channel: 15, note: 47, velocity: 100)))
@@ -348,6 +348,34 @@ final class PlaybackControllerTests: XCTestCase {
         plain.triggerEnding()
         XCTAssertTrue(plain.isStopPending)
         XCTAssertEqual(ControlAction(string: "ending"), .ending)
+    }
+
+    /// Stop vero e fine del Finale fermano la batteria; la pausa no. Avvia riparte subito.
+    func testStopNowAndEndingStopTransportButPauseDoesNot() {
+        let verse = groove("strofa", [(0, 36)])
+        let end = groove("finale", [(0, 49)])
+        let song = EngineSong(name: "A", slots: [EngineSlot(name: "S", groove: verse),
+                                                 EngineSlot(name: "F", groove: end, mode: .oneShotStop)], autoStartSlot: 0)
+        let controller = PlaybackController(songs: [song]) { _, _ in }
+        let t0: UInt64 = 10_000_000_000
+        var i = 0
+        func clocks(_ n: Int) {
+            for _ in 0..<n { let t = t0 + UInt64(i) * clock120; controller.handle(.timingClock, at: t, now: t); i += 1 }
+        }
+        clocks(24)
+        controller.perform(.start, now: t0 + 23 * clock120)
+        clocks(10)
+        controller.perform(.stopAtBarEnd, now: t0 + 33 * clock120)
+        clocks(200)
+        XCTAssertTrue(controller.engine.isRunning) // pausa: resta agganciato
+        controller.perform(.stopNow, now: t0 + UInt64(i - 1) * clock120)
+        XCTAssertFalse(controller.engine.isRunning)
+        controller.perform(.start, now: t0 + UInt64(i - 1) * clock120)
+        XCTAssertTrue(controller.engine.isRunning)
+        controller.perform(.ending, now: t0 + UInt64(i - 1) * clock120)
+        clocks(400) // fino alla fine del finale
+        XCTAssertFalse(controller.engine.isRunning)
+        XCTAssertEqual(ControlAction(string: "stopNow"), .stopNow)
     }
 
     func testStartActionRoundTrip() {
