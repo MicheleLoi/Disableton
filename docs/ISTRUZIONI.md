@@ -136,7 +136,7 @@ Un plugin non ha un'app propria e non compare in Applicazioni. Va caricato dentr
 2. Imposta l'ingresso della traccia come sopra.
 3. Se SSD mostra «empty» o 0.0MB, non ha nessun kit caricato: nella sua pagina **Create** scegli un kit dall'elenco (per esempio «Deluxe 2 Free»).
 
-In alternativa a una DAW puoi usare **Element**, un programma gratuito che ospita plugin senza tracce né progetti: guida in **Aiuto → Element: plugin instruments without a DAW…**. Anche **Aiuto → Connecting a DAW (example: REAPER)…** riassume i passi per REAPER. (Queste guide dell'app sono scritte in inglese.)
+In alternativa a una DAW puoi usare **Element**, un programma gratuito che ospita plugin senza tracce né progetti: guida in **Aiuto → Element: strumenti plugin senza DAW…**. Anche **Aiuto → Collegare una DAW (esempio: REAPER)…** riassume i passi per REAPER.
 
 #### Suona note invece di batteria
 
@@ -217,7 +217,7 @@ Seleziona una scheda e usa:
 - **Ascolta da solo a … BPM** e il cursore **Tempo**: ascolto del groove senza workstation.
 - **Dettagli del groove…**: apre la scheda del groove.
 
-Il link **Fill, finali e comportamento: guida** apre la guida dell'app (la stessa di **Aiuto → Fills, endings and groove behaviour…**).
+Il link **Fill, finali e comportamento: guida** apre la guida dell'app (la stessa di **Aiuto → Fill, finali e comportamento dei groove…**).
 
 Regole da conoscere:
 
@@ -441,8 +441,8 @@ Note:
 
 Puoi chiedere a un assistente AI che crei file MIDI di batteria e poi importarli in Disableton.
 
-1. Apri **Aiuto → Fills, endings and groove behaviour…**
-2. In fondo alla guida trovi tre modelli di richiesta: **Groove (repeated)**, **Fill** e **Ending**. Ognuno ha un pulsante **Copy**.
+1. Apri **Aiuto → Fill, finali e comportamento dei groove…**
+2. In fondo alla guida trovi tre modelli di richiesta: **Groove (ripetuto)**, **Fill** e **Finale**. Ognuno ha un pulsante **Copia**.
 3. Copia il modello, riempi i punti «…» (metro, lunghezza, stile, tempo di riferimento, nome del file) e incollalo in una chat con un assistente AI capace di creare file scaricabili.
 4. Scarica il file .mid e importalo con **Importa .mid…** (vedi [capitolo 4](#4-brani-e-groove-preparazione)). Ascoltalo prima di usarlo sul palco.
 

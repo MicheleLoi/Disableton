@@ -123,8 +123,8 @@ struct SettingsView: View {
                 Text("Nello strumento software o nella DAW scegli come ingresso MIDI “\(LiveHost.virtualPortName)”.")
                     .font(.caption).foregroundColor(.secondary)
                 HStack {
-                    Button("Connecting a DAW (example: REAPER)…") { model.openDAWHelp() }
-                    Button("Element: plugin instruments without a DAW…") { model.openElementHelp() }
+                    Button("Collegare una DAW (esempio: REAPER)…") { model.openDAWHelp() }
+                    Button("Element: strumenti plugin senza DAW…") { model.openElementHelp() }
                 }
             }
             Text("Uscita attuale: " + (model.snapshot?.outputDescription ?? "–"))

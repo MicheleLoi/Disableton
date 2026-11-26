@@ -8,78 +8,78 @@ struct GrooveHelpView: View {
     @State private var copied: String?
 
     static let prompts: [(title: String, text: String)] = [
-        ("Groove (repeated)", """
-        Create a downloadable MIDI file (.mid) with a drum groove that loops seamlessly. \
-        Use General MIDI drum notes on channel 10. Time signature: … . Length: exactly … bars. \
-        Style: … . Tempo for reference: … BPM. Name the file "…".
+        ("Groove (ripetuto)", """
+        Crea un file MIDI (.mid) scaricabile con un groove di batteria che si ripete senza stacchi. \
+        Usa le note di batteria General MIDI sul canale 10. Metro: … . Lunghezza: esattamente … battute. \
+        Stile: … . Tempo di riferimento: … BPM. Chiama il file "…".
         """),
         ("Fill", """
-        Create a downloadable MIDI file (.mid) with a drum fill. Use General MIDI drum notes on \
-        channel 10. Time signature: … . Length: exactly 1 bar. It comes after a … groove and \
-        leads back into it: … . Keep every note inside the bar (no crash on the next downbeat). \
-        Name the file "Fill …".
+        Crea un file MIDI (.mid) scaricabile con un fill di batteria. Usa le note di batteria \
+        General MIDI sul canale 10. Metro: … . Lunghezza: esattamente 1 battuta. Viene dopo un \
+        groove … e ci riporta dentro: … . Tutte le note devono stare dentro la battuta (niente crash \
+        sul battere successivo). Chiama il file "Fill …".
         """),
-        ("Ending", """
-        Create a downloadable MIDI file (.mid) with a drum ending. Use General MIDI drum notes on \
-        channel 10. Time signature: … . Length: exactly … bar(s). Style: … . It ends with … , \
-        then silence. Name the file "Finale …".
+        ("Finale", """
+        Crea un file MIDI (.mid) scaricabile con un finale di batteria. Usa le note di batteria \
+        General MIDI sul canale 10. Metro: … . Lunghezza: esattamente … battute. Stile: … . \
+        Finisce con … , poi silenzio. Chiama il file "Finale …".
         """),
     ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("Fills, endings and groove behaviour").font(.title2.bold())
+                Text("Fill, finali e comportamento dei groove").font(.title2.bold())
                 Spacer()
-                Button("Done") { dismiss() }
+                Button("Fine") { dismiss() }
                     .keyboardShortcut(.cancelAction)
             }
             .padding(20)
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    Text("A MIDI file contains only notes: which drum plays, when and how hard. Whether a groove repeats, plays once and goes back, or ends the song is decided in Disableton, separately for each song.")
+                    Text("Un file MIDI contiene solo note: quale pezzo della batteria suona, quando e con che forza. Se un groove si ripete, suona una volta e torna indietro, o chiude il brano lo decide Disableton, separatamente per ogni brano.")
                         .fixedSize(horizontal: false, vertical: true)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Comportamento (behaviour)").font(.headline)
-                        Text("Select a groove card in a song: the panel on the right shows its Comportamento.")
+                        Text("Comportamento").font(.headline)
+                        Text("Seleziona la scheda di un groove nel brano: il pannello a destra mostra il suo Comportamento.")
                             .fixedSize(horizontal: false, vertical: true)
-                        bullet("Ripetuto (repeated): loops until another command arrives.")
-                        bullet("Fill, poi ritorno (fill, then back) ↩: plays once, then goes back by itself to the repeated groove that was playing before.")
-                        bullet("Una volta, poi il successivo (once, then the next one): plays once, then moves on to the next groove of the song. Useful for a fill that leads from verse to chorus.")
-                        bullet("Finale, poi silenzio (ending, then silence) ■: plays once, then the drums stop.")
-                        Text("When you add a groove to a song, Disableton picks the behaviour from its name: if the name contains “fill” it becomes Fill, poi ritorno; if it contains “finale”, Finale, poi silenzio; anything else is Ripetuto. You can change it at any time, and the same file can behave differently in different songs. The groove's name is the file name: “Fill tom.mid” becomes “Fill tom”.")
+                        bullet("Ripetuto: gira in loop finché non arriva un altro comando.")
+                        bullet("Fill, poi ritorno ↩: suona una volta, poi torna da solo al groove ripetuto che suonava prima.")
+                        bullet("Una volta, poi il successivo →: suona una volta, poi passa al groove successivo del brano. Utile per un'intro o per un fill che porta dalla strofa al ritornello.")
+                        bullet("Finale, poi silenzio ■: suona una volta, poi la batteria si ferma.")
+                        Text("Quando aggiungi un groove a un brano, Disableton sceglie il comportamento dal nome: se contiene «fill» diventa Fill, poi ritorno; se contiene «finale», Finale, poi silenzio; tutti gli altri sono Ripetuto. Puoi cambiarlo quando vuoi, e lo stesso file può comportarsi in modo diverso in brani diversi. Il nome del groove è il nome del file: «Fill tom.mid» diventa «Fill tom».")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Cambio (when it starts)").font(.headline)
-                        bullet("Alla battuta (at the bar), the default: it starts on the next downbeat. For a fill in bar 8, trigger it during bar 7.")
-                        bullet("Al battito (at the beat): it starts on the next beat. For a half-bar fill, trigger it during beat 2 so that it starts on beat 3.")
-                        bullet("A fine groove (at the end of the groove): it waits until the current groove reaches its end.")
+                        Text("Cambio (quando parte)").font(.headline)
+                        bullet("Alla battuta (predefinito): parte al battere successivo. Per un fill nella battuta 8, comandalo durante la battuta 7.")
+                        bullet("Al battito: parte al battito successivo. Per un fill di mezza battuta, comandalo durante il secondo battito così parte sul terzo.")
+                        bullet("A fine groove: aspetta che il groove in corso arrivi alla fine.")
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Good to know").font(.headline)
-                        bullet("The Fill command (from the workstation) plays the first fill of the song. Other fills are triggered with their own position key (1, 2, 3…), like any groove.")
-                        bullet("After a fill, the groove starts again from its beginning.")
-                        bullet("A fill must end on a bar line. One-bar fills work best, including those that start with the groove and end with the actual fill.")
-                        bullet("Disableton measures a groove in whole bars, up to the last bar that contains a note. Empty bars at the beginning are skipped.")
+                        Text("Da sapere").font(.headline)
+                        bullet("Il comando Fill (dalla workstation) fa partire il primo fill del brano; il comando Finale il primo finale. Gli altri si fanno partire con il tasto della loro posizione (1, 2, 3…), come qualsiasi groove.")
+                        bullet("Dopo un fill, il groove riparte dal suo inizio.")
+                        bullet("Un fill deve finire su una stanghetta di battuta. Funzionano meglio i fill di una battuta, compresi quelli che iniziano col groove e chiudono con il fill vero e proprio.")
+                        bullet("Disableton misura un groove in battute intere, fino all'ultima battuta che contiene una nota. Le battute vuote iniziali vengono saltate.")
                     }
 
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Making grooves with AI").font(.headline)
-                        Text("Copy a template, fill in the “…”, and paste it into an AI chat that can create downloadable files. Then import the .mid file into Disableton. Listen to the result before using it on stage.")
+                        Text("Creare groove con l'AI").font(.headline)
+                        Text("Copia un modello, completa i «…» e incollalo in una chat AI che può creare file da scaricare. Poi importa il file .mid in Disableton. Ascolta il risultato prima di usarlo sul palco.")
                             .fixedSize(horizontal: false, vertical: true)
                         ForEach(Self.prompts, id: \.title) { prompt in
                             VStack(alignment: .leading, spacing: 6) {
                                 HStack {
                                     Text(prompt.title).font(.subheadline.weight(.semibold))
                                     Spacer()
-                                    Button(copied == prompt.title ? "Copied" : "Copy") { copy(prompt) }
+                                    Button(copied == prompt.title ? "Copiato" : "Copia") { copy(prompt) }
                                 }
                                 Text(prompt.text)
                                     .font(.system(.callout, design: .monospaced))
@@ -90,7 +90,7 @@ struct GrooveHelpView: View {
                             .background(RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: .textBackgroundColor)))
                             .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.3)))
                         }
-                        Text("Examples for the “…”: time signature 4/4, 3/4 or 6/8; style rock, funk, shuffle, ballad; “two beats of groove, then toms from high to low”; “kick and crash together on beat 1”.")
+                        Text("Esempi per i «…»: metro 4/4, 3/4 o 6/8; stile rock, funk, shuffle, ballad; «due battiti di groove, poi tom dall'acuto al grave»; «cassa e crash insieme sul primo tempo».")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)

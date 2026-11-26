@@ -58,9 +58,9 @@ struct DisabletonApp: App {
                     NSWorkspace.shared.open(URL(string: "https://github.com/MicheleLoi/Disableton/blob/ccr-900483bd-tiua7z/docs/ISTRUZIONI.md")!)
                 }
                 Divider()
-                Button("Connecting a DAW (example: REAPER)…") { model.openDAWHelp() }
-                Button("Element: plugin instruments without a DAW…") { model.openElementHelp() }
-                Button("Fills, endings and groove behaviour…") { model.openGrooveHelp() }
+                Button("Collegare una DAW (esempio: REAPER)…") { model.openDAWHelp() }
+                Button("Element: strumenti plugin senza DAW…") { model.openElementHelp() }
+                Button("Fill, finali e comportamento dei groove…") { model.openGrooveHelp() }
                 Divider()
                 Button("Segnala un problema…") { model.openReport() }
                 Button("Mostra il registro") { model.revealLog() }
