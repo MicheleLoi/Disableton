@@ -309,6 +309,26 @@ final class PlaybackControllerTests: XCTestCase {
         XCTAssertEqual(ControlBinding.learn(from: .programChange(channel: 0, program: 7), action: .fill)?.number, 7)
     }
 
+    /// La manopola dell'intensità agisce con qualsiasi valore e cambia la forza dei colpi successivi.
+    func testIntensityControllerScalesVelocities() {
+        let verse = groove("strofa", [(0, 36), (960, 38)])
+        var sent: [MIDIMessage] = []
+        let map = ControlMap(bindings: [ControlBinding(kind: .controlChange, channel: 1, number: 22, action: .intensity)])
+        let controller = PlaybackController(songs: [EngineSong(name: "A", slots: [EngineSlot(name: "A", groove: verse)])],
+                                            controlMap: map) { m, _ in sent.append(m) }
+        controller.handle(.controlChange(channel: 0, controller: 22, value: 0), at: 0, now: 0)
+        XCTAssertEqual(controller.engine.velocityScale, 0.5, accuracy: 0.001)
+        controller.handle(.controlChange(channel: 0, controller: 22, value: 127), at: 0, now: 0)
+        XCTAssertEqual(controller.engine.velocityScale, 2, accuracy: 0.001)
+        XCTAssertEqual(ControlAction.intensityFactor(controllerValue: 64), 1, accuracy: 0.02)
+        controller.handle(.controlChange(channel: 0, controller: 22, value: 0), at: 0, now: 0)
+        let t0: UInt64 = 1_000_000_000
+        controller.handle(.start, at: t0, now: t0)
+        for i in 0..<30 { let t = t0 + UInt64(i) * clock120; controller.handle(.timingClock, at: t, now: t) }
+        XCTAssertEqual(sent.first, .noteOn(channel: 9, note: 36, velocity: 50))
+        XCTAssertEqual(ControlAction(string: "intensity"), .intensity)
+    }
+
     func testStartActionRoundTrip() {
         XCTAssertEqual(ControlAction(string: "start"), .start)
         XCTAssertEqual(ControlAction.start.description, "start")

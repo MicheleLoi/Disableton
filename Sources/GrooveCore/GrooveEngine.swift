@@ -90,6 +90,8 @@ public final class GrooveEngine {
 
     /// Canale di uscita, 0-based (9 = canale 10).
     public var outputChannel: UInt8
+    /// Intensità dal vivo: le velocity dei colpi vengono moltiplicate per questo fattore.
+    public var velocityScale: Double = 1
     public private(set) var song: EngineSong?
     public private(set) var isRunning = false
     /// Fin dove è già stato generato il brano.
@@ -294,7 +296,11 @@ public final class GrooveEngine {
         switch kind {
         case let .noteOn(note, velocity):
             activeNotes.insert(note)
-            return .noteOn(channel: outputChannel, note: note, velocity: velocity)
+            var v = velocity
+            if velocityScale != 1 {
+                v = UInt8(min(127, max(1, Int((Double(velocity) * velocityScale).rounded()))))
+            }
+            return .noteOn(channel: outputChannel, note: note, velocity: v)
         case let .noteOff(note):
             activeNotes.remove(note)
             return .noteOff(channel: outputChannel, note: note, velocity: 0)

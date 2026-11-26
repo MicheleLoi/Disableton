@@ -130,6 +130,21 @@ struct SettingsView: View {
             Text("Uscita attuale: " + (model.snapshot?.outputDescription ?? "–"))
                 .font(.caption).foregroundColor(.secondary)
 
+            HStack(spacing: 12) {
+                Text("Intensità dal vivo")
+                Slider(value: Binding(
+                    get: { log2((model.snapshot?.intensity ?? 1) / 0.5) / 2 },
+                    set: { model.setLiveIntensity(0.5 * pow(4, $0)) }), in: 0...1)
+                    .frame(width: 220)
+                Text("\(Int(((model.snapshot?.intensity ?? 1) * 100).rounded()))%")
+                    .monospacedDigit()
+                    .frame(width: 50, alignment: .leading)
+                Button("100%") { model.setLiveIntensity(1) }
+            }
+            Text("Moltiplica la forza di tutti i colpi mentre suona (50–200%). Per comandarla da una manopola del Krome: Comandi → Aggiungi comando → «Intensità della batteria», poi gira la manopola. Manopola al centro = 100%.")
+                .font(.caption).foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
             HStack(spacing: 24) {
                 Stepper(value: $model.library.outputChannel, in: 1...16) {
                     Text("Canale MIDI \(model.library.outputChannel)")

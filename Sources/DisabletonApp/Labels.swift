@@ -36,12 +36,13 @@ extension ControlAction {
         case .stopAtBarEnd: return "Silenzio a fine battuta"
         case .panic: return "Panic (spegni tutto)"
         case .start: return "Avvia (al tempo del Krome)"
+        case .intensity: return "Intensità della batteria (manopola)"
         }
     }
 
     /// Azioni proposte nel menu "Aggiungi comando".
     static var menuChoices: [ControlAction] {
-        [.start, .fill, .nextSlot, .previousSlot, .stopAtBarEnd, .nextSong, .previousSong,
+        [.start, .intensity, .fill, .nextSlot, .previousSlot, .stopAtBarEnd, .nextSong, .previousSong,
          .selectSongFromProgram, .panic] + (0..<12).map { ControlAction.triggerSlot($0) }
     }
 }

@@ -123,6 +123,12 @@ public final class PlaybackController {
         case .activeSensing:
             break
         default:
+            if learnCapture == nil, controlMap.isIntensityController(message),
+               case let .controlChange(_, _, value) = message {
+                engine.velocityScale = ControlAction.intensityFactor(controllerValue: value)
+                lastCommand = message
+                break
+            }
             if case let .controlChange(channel, controller, value) = message, learnCapture == nil {
                 let key = Int(channel) << 8 | Int(controller)
                 let wasAbove = controllersAboveHalf.contains(key)
@@ -159,6 +165,7 @@ public final class PlaybackController {
         case .stopAtBarEnd: engine.stopAtNextBar()
         case .panic: for m in engine.panic() { output(m, now) }
         case .start: startFromCommand(now: now)
+        case .intensity: break // comando continuo: gestito in `handle` con il valore del controller
         }
         notifyIfNeeded()
     }

@@ -332,6 +332,8 @@ final class AppModel: ObservableObject {
             perform(action)
         case .panic:
             panic()
+        case .intensity:
+            errorMessage = "L'intensità si regola girando la manopola associata, oppure con il cursore in Impostazioni → Suono della batteria."
         case .start:
             guard !isPlaying else { return }
             guard snapshot?.clockReceiving == true else {
@@ -665,6 +667,11 @@ final class AppModel: ObservableObject {
         } catch {
             errorMessage = "Esportazione non riuscita: \(error)"
         }
+    }
+
+    /// Intensità dal vivo della batteria (1 = colpi originali).
+    func setLiveIntensity(_ factor: Double) {
+        host?.setIntensity(factor)
     }
 
     func stopPreview() {

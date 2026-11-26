@@ -19,6 +19,14 @@ public enum ControlAction: Hashable, Sendable, Codable, CustomStringConvertible 
     /// Fa partire la batteria al tempo del clock del Krome, senza messaggio Start (es. in Combi).
     /// Ignorato se la batteria sta già suonando.
     case start
+    /// Intensità della batteria dal vivo, comandata in continuo da un controller (manopola):
+    /// 0 → 50%, 64 → 100%, 127 → 200% della forza dei colpi.
+    case intensity
+
+    /// Fattore di intensità per il valore di un controller (0…127).
+    public static func intensityFactor(controllerValue value: UInt8) -> Double {
+        0.5 * pow(4, Double(min(value, 127)) / 127)
+    }
 
     public init?(string: String) {
         let parts = string.split(separator: ":", maxSplits: 1).map { String($0).trimmingCharacters(in: .whitespaces) }
@@ -40,6 +48,7 @@ public enum ControlAction: Hashable, Sendable, Codable, CustomStringConvertible 
         case "stopAtBarEnd": self = .stopAtBarEnd
         case "panic": self = .panic
         case "start": self = .start
+        case "intensity": self = .intensity
         default: return nil
         }
     }
@@ -57,6 +66,7 @@ public enum ControlAction: Hashable, Sendable, Codable, CustomStringConvertible 
         case .stopAtBarEnd: return "stopAtBarEnd"
         case .panic: return "panic"
         case .start: return "start"
+        case .intensity: return "intensity"
         }
     }
 
@@ -117,6 +127,12 @@ public struct ControlMap: Codable, Equatable, Sendable {
 
     public init(bindings: [ControlBinding]) {
         self.bindings = bindings
+    }
+
+    /// Controller associato all'intensità (comando continuo, attivo con qualsiasi valore).
+    public func isIntensityController(_ message: MIDIMessage) -> Bool {
+        guard case let .controlChange(channel, controller, _) = message else { return false }
+        return match(.controlChange, channel: channel, number: controller) == .intensity
     }
 
     public func action(for message: MIDIMessage) -> ControlAction? {

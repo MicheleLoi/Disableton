@@ -27,6 +27,8 @@ public struct LiveSnapshot: Equatable {
     public var output: SoundOutput
     /// Descrizione della destinazione del suono (o del problema).
     public var outputDescription: String
+    /// Intensità dal vivo (1 = colpi originali).
+    public var intensity: Double = 1
 }
 
 /// Motore dal vivo completo: ingresso dal Krome, uscita verso EZdrummer / sintetizzatore di
@@ -121,7 +123,8 @@ public final class LiveHost {
                             learning: learning,
                             realtimePriority: realtimeGranted,
                             output: output,
-                            outputDescription: outputDescription)
+                            outputDescription: outputDescription,
+                            intensity: controller.engine.velocityScale)
     }
 
     // MARK: - Configurazione
@@ -178,6 +181,12 @@ public final class LiveHost {
     public func perform(_ action: ControlAction) {
         lock.lock(); defer { lock.unlock() }
         controller.perform(action, now: HostClock.nowNanos())
+    }
+
+    /// Intensità dal vivo (0,5–2): moltiplica la forza dei colpi da qui in avanti.
+    public func setIntensity(_ factor: Double) {
+        lock.lock(); defer { lock.unlock() }
+        controller.engine.velocityScale = min(2, max(0.5, factor))
     }
 
     /// Emergenza: silenzio immediato. Ferma ascolto e clock interno; con il Krome il groove
