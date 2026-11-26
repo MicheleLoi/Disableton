@@ -614,18 +614,57 @@ final class AppModel: ObservableObject {
         library = store.library
     }
 
-    func togglePreview(_ record: GrooveRecord) {
+    func togglePreview(_ record: GrooveRecord, intensity: Double = 1) {
         if previewingGrooveID == record.id {
             stopPreview()
             return
         }
-        guard let host, let groove = groove(for: record) else { return }
+        guard let host, let original = groove(for: record) else { return }
+        let groove = intensity == 1 ? original : original.scalingVelocities(by: intensity)
         guard !isKromePlaying else {
             errorMessage = "Il Krome sta suonando: ferma prima il suo sequencer per ascoltare un groove da solo."
             return
         }
         host.startPreview(groove: groove, bpm: previewBPM)
         previewingGrooveID = record.id
+    }
+
+    /// Il groove con le velocity moltiplicate, come file MIDI (stessa lunghezza e metro).
+    private func scaledMIDIData(_ record: GrooveRecord, intensity: Double) -> (Data, Groove)? {
+        guard let original = groove(for: record) else { return nil }
+        let scaled = original.scalingVelocities(by: intensity)
+        return (scaled.midiData(tempoBPM: original.sourceTempoBPM ?? 120), scaled)
+    }
+
+    /// Salva il groove con l'intensità scelta come nuovo groove della libreria (l'originale resta).
+    func saveScaledGroove(_ record: GrooveRecord, intensity: Double) {
+        guard let store, let result = scaledMIDIData(record, intensity: intensity) else { return }
+        let (data, scaled) = result
+        let name = "\(record.name) \(Int((intensity * 100).rounded()))%"
+        do {
+            let new = try store.importGroove(data: data, name: name, source: .user,
+                                             lengthBars: scaled.wholeBars, timeSignature: scaled.timeSignature)
+            library = store.library
+            showNotice("Nuovo groove in libreria: «\(new.name)»")
+            log.log("Intensità: «\(record.name)» salvato come «\(new.name)»")
+        } catch {
+            errorMessage = "Salvataggio non riuscito: \(error)"
+        }
+    }
+
+    /// Esporta il groove con l'intensità scelta in un file .mid scelto dall'utente.
+    func exportScaledGroove(_ record: GrooveRecord, intensity: Double) {
+        guard let data = scaledMIDIData(record, intensity: intensity)?.0 else { return }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.midi]
+        panel.nameFieldStringValue = "\(record.name) \(Int((intensity * 100).rounded()))%.mid"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try data.write(to: url, options: .atomic)
+            showNotice("Esportato: \(url.lastPathComponent)")
+        } catch {
+            errorMessage = "Esportazione non riuscita: \(error)"
+        }
     }
 
     func stopPreview() {

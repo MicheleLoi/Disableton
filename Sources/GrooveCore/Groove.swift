@@ -82,6 +82,29 @@ public struct Groove: Sendable {
     public var ticksPerBar: Int { timeSignature.ticksPerBar(ppq: Groove.ppq) }
     public var lengthBars: Double { Double(lengthTicks) / Double(ticksPerBar) }
 
+    /// Copia con le velocity dei colpi moltiplicate per `factor` (1 = invariate), limitate a 1…127.
+    /// Il rapporto tra i colpi resta lo stesso, tranne per quelli che arrivano al massimo (127).
+    public func scalingVelocities(by factor: Double) -> Groove {
+        let scaled = events.map { event -> GrooveEvent in
+            guard case let .noteOn(note, velocity) = event.kind else { return event }
+            let value = Int((Double(velocity) * factor).rounded())
+            return GrooveEvent(tick: event.tick, kind: .noteOn(note: note, velocity: UInt8(min(127, max(1, value)))))
+        }
+        return Groove(name: name, timeSignature: timeSignature, lengthTicks: lengthTicks, events: scaled,
+                      sourceTempoBPM: sourceTempoBPM, droppedEventCount: droppedEventCount)
+    }
+
+    /// Quanti colpi supererebbero il massimo (127) con il fattore indicato.
+    public func clippedHits(factor: Double) -> Int {
+        events.filter { event in
+            guard case let .noteOn(_, velocity) = event.kind else { return false }
+            return Double(velocity) * factor > 127.5
+        }.count
+    }
+
+    /// Le battute intere del groove (per riscriverlo con la stessa lunghezza).
+    public var wholeBars: Int { max(1, lengthTicks / timeSignature.ticksPerBar(ppq: Groove.ppq)) }
+
     public var noteOnCount: Int {
         events.reduce(0) { n, e in if case .noteOn = e.kind { return n + 1 }; return n }
     }

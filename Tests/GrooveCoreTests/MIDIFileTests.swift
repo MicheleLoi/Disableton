@@ -112,3 +112,27 @@ final class MIDIFileTests: XCTestCase {
         XCTAssertEqual(NoteName.korg(49), "C#3")
     }
 }
+
+final class VelocityScalingTests: XCTestCase {
+    func testScalingKeepsBalanceAndClips() throws {
+        let groove = Groove(name: "g", timeSignature: .fourFour, lengthTicks: 3840, events: [
+            GrooveEvent(tick: 0, kind: .noteOn(note: 36, velocity: 40)),
+            GrooveEvent(tick: 60, kind: .noteOff(note: 36)),
+            GrooveEvent(tick: 960, kind: .noteOn(note: 38, velocity: 80)),
+            GrooveEvent(tick: 1920, kind: .noteOn(note: 49, velocity: 110)),
+        ])
+        let louder = groove.scalingVelocities(by: 1.5)
+        XCTAssertEqual(louder.events.map { $0.kind }, [
+            .noteOn(note: 36, velocity: 60), .noteOff(note: 36),
+            .noteOn(note: 38, velocity: 120), .noteOn(note: 49, velocity: 127),
+        ])
+        XCTAssertEqual(groove.clippedHits(factor: 1.5), 1)
+        XCTAssertEqual(groove.scalingVelocities(by: 0.01).events.first?.kind, .noteOn(note: 36, velocity: 1))
+        // Riscritto come file MIDI e reimportato: stesse velocity e stessa lunghezza.
+        let data = louder.midiData()
+        let back = try Groove(midiFile: MIDIFile(data: data), name: "g",
+                              options: GrooveImportOptions(lengthBars: louder.wholeBars, timeSignature: .fourFour))
+        XCTAssertEqual(back.lengthTicks, 3840)
+        XCTAssertTrue(back.events.contains(GrooveEvent(tick: 960, kind: .noteOn(note: 38, velocity: 120))))
+    }
+}

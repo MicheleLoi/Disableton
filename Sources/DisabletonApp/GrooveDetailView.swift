@@ -8,6 +8,8 @@ struct GrooveDetailView: View {
     let grooveID: UUID
     let onDelete: () -> Void
     @State private var confirmDelete = false
+    /// Intensità in percentuale (100 = velocity originali).
+    @State private var intensity: Double = 100
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -50,7 +52,7 @@ struct GrooveDetailView: View {
                     GroupBox {
                         HStack(spacing: 12) {
                             Button {
-                                model.togglePreview(record)
+                                model.togglePreview(record, intensity: intensity / 100)
                             } label: {
                                 Label(previewing ? "Ferma" : "Ascolta", systemImage: previewing ? "stop.fill" : "play.fill")
                             }
@@ -63,7 +65,52 @@ struct GrooveDetailView: View {
                         }
                         .padding(4)
                     } label: {
-                        Text("Ascolto con EZdrummer 3 (senza Krome)")
+                        Text("Ascolto (senza Krome)")
+                    }
+
+                    GroupBox {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 12) {
+                                Slider(value: $intensity, in: 50...200, step: 5)
+                                    .frame(width: 260)
+                                    .onChange(of: intensity) { _ in
+                                        // Se sta suonando, riparte con la nuova intensità.
+                                        if previewing {
+                                            model.stopPreview()
+                                            model.togglePreview(record, intensity: intensity / 100)
+                                        }
+                                    }
+                                Text("\(Int(intensity))%")
+                                    .monospacedDigit()
+                                    .frame(width: 50, alignment: .leading)
+                                Button("100%") { intensity = 100 }
+                                    .disabled(intensity == 100)
+                            }
+                            Text("Moltiplica la forza di tutti i colpi (velocity): il rapporto tra cassa, rullante e piatti resta lo stesso. «Ascolta» qui sopra usa questa intensità.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if let groove, groove.clippedHits(factor: intensity / 100) > 0 {
+                                Text("\(groove.clippedHits(factor: intensity / 100)) colpi arrivano al massimo (127) e vengono fermati lì.")
+                                    .font(.caption)
+                                    .foregroundColor(.orange)
+                            }
+                            HStack {
+                                Button("Salva come nuovo groove") {
+                                    model.saveScaledGroove(record, intensity: intensity / 100)
+                                }
+                                Button("Esporta .mid…") {
+                                    model.exportScaledGroove(record, intensity: intensity / 100)
+                                }
+                            }
+                            .disabled(groove == nil || intensity == 100)
+                            Text("Il groove originale non viene modificato.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(4)
+                    } label: {
+                        Text("Intensità")
                     }
 
                     if let groove {
