@@ -12,47 +12,47 @@ struct ElementHelpView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("Element: strumenti plugin senza DAW").font(.title2.bold())
+                Text("Element: plugin instruments without a DAW").font(.title2.bold())
                 Spacer()
-                Button("Fine") { dismiss() }
+                Button("Done") { dismiss() }
                     .keyboardShortcut(.cancelAction)
             }
             .padding(20)
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    Text("Element è un programma gratuito e open source che apre strumenti in formato plugin (AU, VST3) e li fa suonare con il MIDI, senza tutto quello che fa una DAW: niente tracce, registrazione o progetti.")
+                    Text("Element is a free, open-source program that opens plugin instruments (AU, VST3) and plays them via MIDI, without everything a DAW does: no tracks, recording or projects.")
                         .fixedSize(horizontal: false, vertical: true)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Quando usarlo").font(.headline)
-                        bullet("Lo strumento di batteria che vuoi usare esiste solo come plugin, senza un'app da aprire da sola.")
-                        bullet("Vuoi un programma leggero e sempre uguale per il palco, invece di una DAW completa.")
-                        Text("Quando non serve").font(.headline).padding(.top, 6)
-                        bullet("Lo strumento ha già un'app autonoma (EZdrummer 3, Analog Lab, Pigments): basta selezionare «\(LiveHost.virtualPortName)» come ingresso MIDI nell'app stessa.")
-                        bullet("Usi il sintetizzatore di macOS o il Krome: Disableton li raggiunge già da solo.")
+                        Text("When to use it").font(.headline)
+                        bullet("The drum instrument you want exists only as a plugin, with no standalone app.")
+                        bullet("You want a light setup that opens the same way every time on stage, instead of a full DAW. It's also free, while REAPER needs a license.")
+                        Text("When you don't need it").font(.headline).padding(.top, 6)
+                        bullet("The instrument has its own standalone app (EZdrummer 3, Analog Lab, Pigments): just select “\(LiveHost.virtualPortName)” as the MIDI input in that app.")
+                        bullet("You use the macOS synth or the Krome: Disableton reaches them on its own.")
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Scaricarlo").font(.headline)
+                        Text("Download").font(.headline)
                         HStack(spacing: 12) {
-                            Button("Sito di Element (kushview.net)") { NSWorkspace.shared.open(downloadURL) }
-                            Button("Versioni su GitHub") { NSWorkspace.shared.open(githubURL) }
+                            Button("Element website (kushview.net)") { NSWorkspace.shared.open(downloadURL) }
+                            Button("Releases on GitHub") { NSWorkspace.shared.open(githubURL) }
                         }
-                        Text("Il sito può chiedere un indirizzo email prima del download; su GitHub si scarica direttamente. Prima di affidartici, controlla che la versione scaricata si apra sul tuo Mac.")
+                        Text("The website may ask for an email address before downloading; GitHub downloads directly. Before relying on it, check that the version you downloaded opens on your Mac.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    section("Collegarlo a Disableton", [
-                        "In Disableton: Impostazioni → Suono della batteria → «Porta virtuale «\(LiveHost.virtualPortName)»». Tieni Disableton aperto.",
-                        "Apri Element. Nelle sue preferenze, nella parte MIDI, abilita l'ingresso «\(LiveHost.virtualPortName)». Se non c'è, chiudi e riapri Element con Disableton già aperto.",
-                        "Carica lo strumento di batteria e collega l'ingresso MIDI allo strumento, e lo strumento all'uscita audio.",
-                        "Prova: in Disableton premi ▶ Prova senza Krome. Lo strumento in Element deve suonare.",
+                    section("Connecting it to Disableton", [
+                        "In Disableton: Settings → Suono della batteria (drum sound) → “Porta virtuale «\(LiveHost.virtualPortName)»” (virtual port). Keep Disableton open.",
+                        "Open Element. In its preferences, MIDI section, enable the “\(LiveHost.virtualPortName)” input. If it isn't listed, quit and reopen Element with Disableton already open.",
+                        "Load the drum instrument, then connect the MIDI input to the instrument and the instrument to the audio output.",
+                        "Test: in Disableton press ▶ Prova senza Krome (play without Krome). The instrument in Element should play.",
                     ])
 
-                    Text("Per far suonare più strumenti insieme (un suono di batteria per ciascuno) serve una funzione di Disableton ancora in preparazione; quando sarà pronta, questa pagina spiegherà come usarla con Element.")
+                    Text("Playing several instruments at once (one drum sound each) needs a Disableton feature that's still in preparation; when it's ready, this page will explain how to use it with Element.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

@@ -120,8 +120,8 @@ struct SettingsView: View {
                 Text("Nello strumento software (es. EZdrummer 3: Settings → MIDI) abilita l'ingresso “\(LiveHost.virtualPortName)”.")
                     .font(.caption).foregroundColor(.secondary)
                 HStack {
-                    Button("Come collegare una DAW (esempio: REAPER)…") { model.openDAWHelp() }
-                    Button("Strumenti plugin senza DAW: Element…") { model.openElementHelp() }
+                    Button("Connecting a DAW (example: REAPER)…") { model.openDAWHelp() }
+                    Button("Element: plugin instruments without a DAW…") { model.openElementHelp() }
                 }
             }
             Text("Uscita attuale: " + (model.snapshot?.outputDescription ?? "–"))
