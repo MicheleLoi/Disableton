@@ -8,6 +8,8 @@ libreria dei groove, li suona agganciati al clock della workstation e li invia a
 batteria: uno strumento software o una DAW attraverso la porta MIDI virtuale «Disableton», il
 sintetizzatore di macOS, oppure un kit di batteria della workstation stessa.
 
+**Istruzioni per l'uso: [docs/ISTRUZIONI.md](docs/ISTRUZIONI.md)** (anche dal menu Aiuto dell'app).
+
 Le scelte di progetto sono descritte in [docs/ARCHITETTURA.md](docs/ARCHITETTURA.md).
 
 ## Stato

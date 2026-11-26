@@ -54,6 +54,10 @@ struct DisabletonApp: App {
                 Button("Palco") { model.mode = .stage }.keyboardShortcut("3")
             }
             CommandGroup(replacing: .help) {
+                Button("Istruzioni (su GitHub)") {
+                    NSWorkspace.shared.open(URL(string: "https://github.com/MicheleLoi/Disableton/blob/ccr-900483bd-tiua7z/docs/ISTRUZIONI.md")!)
+                }
+                Divider()
                 Button("Connecting a DAW (example: REAPER)…") { model.openDAWHelp() }
                 Button("Element: plugin instruments without a DAW…") { model.openElementHelp() }
                 Button("Fills, endings and groove behaviour…") { model.openGrooveHelp() }
