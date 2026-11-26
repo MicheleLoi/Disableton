@@ -71,7 +71,11 @@ struct GrooveDetailView: View {
                     GroupBox {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack(spacing: 12) {
-                                Slider(value: $intensity, in: 50...200, step: 5)
+                                // Senza "step": su macOS il cursore a scatti appare grigio; si arrotonda a 5% qui.
+                                Slider(value: Binding(get: { intensity },
+                                                      set: { intensity = ($0 / 5).rounded() * 5 }),
+                                       in: 50...200)
+                                    .tint(.accentColor)
                                     .frame(width: 260)
                                     .onChange(of: intensity) { _ in
                                         // Se sta suonando, riparte con la nuova intensità.
