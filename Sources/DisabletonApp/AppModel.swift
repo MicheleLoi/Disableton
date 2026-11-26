@@ -633,6 +633,15 @@ final class AppModel: ObservableObject {
         library.controlMap.action(for: .noteOn(channel: 15, note: UInt8(clamping: note), velocity: 100))
     }
 
+    /// Tasti imparati dalla tastiera del Krome (note su un canale diverso dal 16), per numero di nota.
+    func learnedNoteBindings() -> [Int: ControlBinding] {
+        var result: [Int: ControlBinding] = [:]
+        for b in library.controlMap.bindings where b.kind == .note && b.channel != 16 {
+            if let n = b.number { result[n] = b }
+        }
+        return result
+    }
+
     /// Assegna (o toglie, con nil) l'azione di una nota sul canale 16.
     func setAction(_ action: ControlAction?, forNote note: Int) {
         var bindings = library.controlMap.bindings.filter { !($0.kind == .note && $0.channel == 16 && $0.number == note) }

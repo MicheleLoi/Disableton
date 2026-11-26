@@ -12,7 +12,7 @@ struct CommandsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     HStack(alignment: .firstTextBaseline) {
-                        Text("Zona comandi del Krome · canale 16 · C2–B3").font(.headline)
+                        Text("Tasti del Krome · predefiniti sul canale 16 · imparati con il pallino").font(.headline)
                         Spacer()
                         Text("Clic su un tasto per vederlo o cambiarlo").font(.caption).foregroundColor(.secondary)
                     }
@@ -39,11 +39,19 @@ enum KeyState {
 
 struct KromeKeyboard: View {
     @EnvironmentObject var model: AppModel
-    static let notes = Array(36...59)
+
+    /// C2–B3, allargata a ottave intere per includere i tasti imparati.
+    private var notes: [Int] {
+        let learned = model.learnedNoteBindings().keys
+        let low = min(36, (learned.min() ?? 36) / 12 * 12)
+        let high = max(59, (learned.max() ?? 59) / 12 * 12 + 11)
+        return Array(low...min(127, high))
+    }
 
     var body: some View {
         GeometryReader { geo in
-            let whites = KromeKeyboard.notes.filter { !KromeKeyboard.isBlack($0) }
+            let notes = self.notes
+            let whites = notes.filter { !KromeKeyboard.isBlack($0) }
             let whiteWidth = geo.size.width / CGFloat(whites.count)
             ZStack(alignment: .topLeading) {
                 HStack(spacing: 0) {
@@ -52,7 +60,7 @@ struct KromeKeyboard: View {
                             .frame(width: whiteWidth, height: geo.size.height)
                     }
                 }
-                ForEach(KromeKeyboard.notes.filter { KromeKeyboard.isBlack($0) }, id: \.self) { note in
+                ForEach(notes.filter { KromeKeyboard.isBlack($0) }, id: \.self) { note in
                     let whitesBefore = whites.filter { $0 < note }.count
                     KeyButton(note: note, black: true)
                         .frame(width: whiteWidth * 0.64, height: geo.size.height * 0.6)
@@ -75,13 +83,17 @@ struct KeyButton: View {
     let black: Bool
 
     var body: some View {
-        let action = model.action(forNote: note)
+        let learned = model.learnedNoteBindings()[note]
+        let action = learned?.action ?? model.action(forNote: note)
         let state = keyState(action)
         let selected = model.selectedKey == note
         Button {
             model.selectedKey = note
         } label: {
             VStack(spacing: 2) {
+                if learned != nil {
+                    Circle().fill(Color.orange).frame(width: 8, height: 8).padding(.top, 6)
+                }
                 Spacer()
                 Text(shortLabel(action))
                     .font(.system(size: black ? 11 : 13, weight: .bold))
@@ -102,7 +114,8 @@ struct KeyButton: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(NoteName.korg(UInt8(note))), nota \(note): \(action?.label ?? "nessuna azione")")
+        .accessibilityLabel("\(NoteName.korg(UInt8(note))), nota \(note): \(action?.label ?? "nessuna azione")"
+                            + (learned.map { ", imparato sul canale \($0.channel)" } ?? ""))
     }
 
     private func keyState(_ action: ControlAction?) -> KeyState {
@@ -171,6 +184,10 @@ struct KeyLegend: View {
             item(Color(red: 0.89, green: 0.92, blue: 0.99), "groove del brano")
             item(Color(red: 0.9, green: 0.88, blue: 0.97), "comando")
             item(Color(white: 0.96), "slot vuoto in questo brano")
+            HStack(spacing: 6) {
+                Circle().fill(Color.orange).frame(width: 8, height: 8)
+                Text("tasto imparato")
+            }
         }
         .font(.caption)
     }
@@ -263,9 +280,13 @@ struct KeyInspector: View {
     var body: some View {
         let note = model.selectedKey ?? 36
         let action = model.action(forNote: note)
+        let learned = model.learnedNoteBindings()[note]
         VStack(alignment: .leading, spacing: 12) {
             Text("Tasto selezionato").font(.caption).foregroundColor(.secondary)
             Text("\(NoteName.korg(UInt8(note))) · nota \(note)").font(.title2.weight(.bold))
+            if let learned {
+                Text("Imparato, canale \(learned.channel) → " + learned.action.label).foregroundColor(.orange)
+            }
             Text("Canale 16 → " + (action?.label ?? "nessuna azione"))
 
             if case let .triggerSlot(i)? = action {
