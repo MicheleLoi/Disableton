@@ -12,6 +12,8 @@ public enum ControlAction: Hashable, Sendable, Codable, CustomStringConvertible 
     /// Slot del brano corrente (0-based).
     case triggerSlot(Int)
     case fill
+    /// Primo groove "Finale, poi silenzio" del brano; se non c'è, silenzio a fine battuta.
+    case ending
     case nextSlot
     case previousSlot
     case stopAtBarEnd
@@ -43,6 +45,7 @@ public enum ControlAction: Hashable, Sendable, Codable, CustomStringConvertible 
             guard let n = number, n >= 1 else { return nil }
             self = .triggerSlot(n - 1)
         case "fill": self = .fill
+        case "ending": self = .ending
         case "nextSlot": self = .nextSlot
         case "previousSlot": self = .previousSlot
         case "stopAtBarEnd": self = .stopAtBarEnd
@@ -61,6 +64,7 @@ public enum ControlAction: Hashable, Sendable, Codable, CustomStringConvertible 
         case .previousSong: return "previousSong"
         case let .triggerSlot(i): return "triggerSlot:\(i + 1)"
         case .fill: return "fill"
+        case .ending: return "ending"
         case .nextSlot: return "nextSlot"
         case .previousSlot: return "previousSlot"
         case .stopAtBarEnd: return "stopAtBarEnd"
@@ -163,7 +167,7 @@ public struct ControlMap: Codable, Equatable, Sendable {
     /// - note 24…35 (C1…B1) → slot 1…12
     /// - ottava dei comandi, da C2: 36 (C2) avvia, 37 (C#2) groove precedente, 38 (D2) fill,
     ///   39 (D#2) groove successivo, 40 (E2) silenzio a fine battuta, 41 (F2) panic,
-    ///   42 (F#2) brano precedente, 44 (G#2) brano successivo
+    ///   42 (F#2) brano precedente, 43 (G2) finale, 44 (G#2) brano successivo
     /// - nessun controller predefinito: SW1, SW2 e pedale restano liberi (si assegnano con Impara)
     public static let `default`: ControlMap = {
         let ch = 16
@@ -181,6 +185,7 @@ public struct ControlMap: Codable, Equatable, Sendable {
             ControlBinding(kind: .note, channel: ch, number: 40, action: .stopAtBarEnd),
             ControlBinding(kind: .note, channel: ch, number: 41, action: .panic),
             ControlBinding(kind: .note, channel: ch, number: 42, action: .previousSong),
+            ControlBinding(kind: .note, channel: ch, number: 43, action: .ending),
             ControlBinding(kind: .note, channel: ch, number: 44, action: .nextSong),
         ]
         return ControlMap(bindings: b)

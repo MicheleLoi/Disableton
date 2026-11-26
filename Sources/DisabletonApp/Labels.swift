@@ -31,6 +31,7 @@ extension ControlAction {
         case .previousSong: return "Brano precedente"
         case let .triggerSlot(i): return "Groove \(i + 1) del brano"
         case .fill: return "Fill"
+        case .ending: return "Finale (poi silenzio)"
         case .nextSlot: return "Groove successivo"
         case .previousSlot: return "Groove precedente"
         case .stopAtBarEnd: return "Silenzio a fine battuta"
@@ -42,7 +43,7 @@ extension ControlAction {
 
     /// Azioni proposte nel menu "Aggiungi comando".
     static var menuChoices: [ControlAction] {
-        [.start, .intensity, .fill, .nextSlot, .previousSlot, .stopAtBarEnd, .nextSong, .previousSong,
+        [.start, .intensity, .fill, .ending, .nextSlot, .previousSlot, .stopAtBarEnd, .nextSong, .previousSong,
          .selectSongFromProgram, .panic] + (0..<12).map { ControlAction.triggerSlot($0) }
     }
 }

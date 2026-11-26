@@ -329,6 +329,27 @@ final class PlaybackControllerTests: XCTestCase {
         XCTAssertEqual(ControlAction(string: "intensity"), .intensity)
     }
 
+    func testEndingCommandPlaysSongEndingOrStops() {
+        let verse = groove("strofa", [(0, 36)])
+        let end = groove("finale", [(0, 49)])
+        let map = ControlMap.default
+        XCTAssertEqual(map.action(for: .noteOn(channel: 15, note: 43, velocity: 100)), .ending)
+        let engine = GrooveEngine()
+        engine.load(song: EngineSong(name: "A", slots: [EngineSlot(name: "S", groove: verse),
+                                                         EngineSlot(name: "F", groove: end, mode: .oneShotStop)]))
+        engine.transportStarted(at: 0)
+        _ = engine.render(to: 10)
+        engine.triggerEnding()
+        XCTAssertEqual(engine.pendingSlotIndex, 1)
+        let plain = GrooveEngine()
+        plain.load(song: EngineSong(name: "B", slots: [EngineSlot(name: "S", groove: verse)]))
+        plain.transportStarted(at: 0)
+        _ = plain.render(to: 10)
+        plain.triggerEnding()
+        XCTAssertTrue(plain.isStopPending)
+        XCTAssertEqual(ControlAction(string: "ending"), .ending)
+    }
+
     func testStartActionRoundTrip() {
         XCTAssertEqual(ControlAction(string: "start"), .start)
         XCTAssertEqual(ControlAction.start.description, "start")

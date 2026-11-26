@@ -37,7 +37,7 @@ Uso:
 Comandi predefiniti dal Krome (canale 16, nomi Korg: 24 = C1, 36 = C2):
   Program Change n → brano n+1   note 24…35 (C1…B1) → slot 1…12
   36 avvia   37/39 groove precedente/successivo   38 fill   40 silenzio a fine battuta
-  41 panic   42/44 brano precedente/successivo
+  41 panic   42/44 brano precedente/successivo   43 finale
   SW1, SW2 e pedale: nessun comando predefinito (si assegnano con Impara)
 """
 

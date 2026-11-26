@@ -160,6 +160,7 @@ Avvia il sequencer del Krome: il primo groove parte sul primo battere. Con note 
 | E2 | 40 | silenzio dalla battuta successiva |
 | F2 | 41 | panic (spegne tutte le note) |
 | F#2 / G#2 | 42 / 44 | brano precedente / successivo |
+| G2 | 43 | finale: il groove «Finale, poi silenzio» del brano (senza finale: silenzio a fine battuta) |
 | Program Change n | – | brano n+1 |
 | SW1, SW2, pedale | – | nessun comando predefinito: si assegnano con **Impara** |
 

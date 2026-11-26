@@ -150,6 +150,15 @@ public final class GrooveEngine {
         trigger(slot: i)
     }
 
+    /// Esegue il primo slot "Finale, poi silenzio" del brano; senza finale, silenzio a fine battuta.
+    public func triggerEnding() {
+        guard let song, let i = song.slots.firstIndex(where: { $0.mode == .oneShotStop }) else {
+            stopAtNextBar()
+            return
+        }
+        trigger(slot: i)
+    }
+
     /// Esegue il primo slot di tipo fill del brano.
     public func triggerFill() {
         guard let song, let i = song.slots.firstIndex(where: { $0.mode == .oneShotReturn }) else { return }

@@ -324,7 +324,7 @@ final class AppModel: ObservableObject {
         switch action {
         case let .triggerSlot(i):
             playSlot(i)
-        case .fill, .nextSlot, .previousSlot, .stopAtBarEnd:
+        case .fill, .ending, .nextSlot, .previousSlot, .stopAtBarEnd:
             guard isPlaying else {
                 errorMessage = "Avvia prima la riproduzione (Krome, oppure ▶ Prova senza Krome nella barra in alto)."
                 return

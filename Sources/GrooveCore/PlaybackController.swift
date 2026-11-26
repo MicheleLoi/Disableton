@@ -160,6 +160,7 @@ public final class PlaybackController {
         case .previousSong: selectSong((currentSongIndex ?? 1) - 1)
         case let .triggerSlot(i): engine.trigger(slot: i)
         case .fill: engine.triggerFill()
+        case .ending: engine.triggerEnding()
         case .nextSlot: engine.triggerNextSlot()
         case .previousSlot: engine.triggerPreviousSlot()
         case .stopAtBarEnd: engine.stopAtNextBar()

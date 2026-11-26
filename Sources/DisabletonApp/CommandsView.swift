@@ -168,6 +168,7 @@ struct KeyButton: View {
         switch action {
         case let .triggerSlot(i): return "\(i + 1)"
         case .fill: return "FILL"
+        case .ending: return "FINALE"
         case .nextSlot: return "GR▶"
         case .previousSlot: return "◀GR"
         case .nextSong: return "B▶"
