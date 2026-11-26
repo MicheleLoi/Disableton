@@ -142,9 +142,9 @@ public struct ControlMap: Codable, Equatable, Sendable {
     ///
     /// - Program Change n → brano n+1
     /// - note 24…35 (C1…B1) → slot 1…12
-    /// - ottava dei comandi, da C2: 36 (C2) avvia, 37 (C#2) brano precedente, 38 (D2) fill,
-    ///   39 (D#2) brano successivo, 40 (E2) groove successivo, 41 (F2) groove precedente,
-    ///   43 (G2) panic, 47 (B2) silenzio a fine battuta
+    /// - ottava dei comandi, da C2: 36 (C2) avvia, 37 (C#2) groove precedente, 38 (D2) fill,
+    ///   39 (D#2) groove successivo, 40 (E2) silenzio a fine battuta, 41 (F2) panic,
+    ///   42 (F#2) brano precedente, 44 (G#2) brano successivo
     /// - CC 80 (SW1) fill, CC 81 (SW2) groove successivo, CC 82 (pedale) fill
     public static let `default`: ControlMap = {
         let ch = 16
@@ -156,13 +156,13 @@ public struct ControlMap: Codable, Equatable, Sendable {
         }
         b += [
             ControlBinding(kind: .note, channel: ch, number: 36, action: .start),
-            ControlBinding(kind: .note, channel: ch, number: 37, action: .previousSong),
+            ControlBinding(kind: .note, channel: ch, number: 37, action: .previousSlot),
             ControlBinding(kind: .note, channel: ch, number: 38, action: .fill),
-            ControlBinding(kind: .note, channel: ch, number: 39, action: .nextSong),
-            ControlBinding(kind: .note, channel: ch, number: 40, action: .nextSlot),
-            ControlBinding(kind: .note, channel: ch, number: 41, action: .previousSlot),
-            ControlBinding(kind: .note, channel: ch, number: 43, action: .panic),
-            ControlBinding(kind: .note, channel: ch, number: 47, action: .stopAtBarEnd),
+            ControlBinding(kind: .note, channel: ch, number: 39, action: .nextSlot),
+            ControlBinding(kind: .note, channel: ch, number: 40, action: .stopAtBarEnd),
+            ControlBinding(kind: .note, channel: ch, number: 41, action: .panic),
+            ControlBinding(kind: .note, channel: ch, number: 42, action: .previousSong),
+            ControlBinding(kind: .note, channel: ch, number: 44, action: .nextSong),
             ControlBinding(kind: .controlChange, channel: ch, number: 80, action: .fill),
             ControlBinding(kind: .controlChange, channel: ch, number: 81, action: .nextSlot),
             ControlBinding(kind: .controlChange, channel: ch, number: 82, action: .fill),

@@ -155,11 +155,11 @@ Avvia il sequencer del Krome: il primo groove parte sul primo battere. Con note 
 |---|---|---|
 | C1, C#1, D1… B1 | 24, 25, 26… 35 | slot 1, 2, 3… 12 (cambio alla battuta successiva) |
 | C2 | 36 | avvia: la batteria parte al tempo del Krome anche senza Start (es. in Combi); ignorato se sta già suonando |
-| C#2 / D#2 | 37 / 39 | brano precedente / successivo |
+| C#2 / D#2 | 37 / 39 | groove precedente / successivo |
 | D2 | 38 | fill, poi ritorno al groove precedente |
-| E2 / F2 | 40 / 41 | groove successivo / precedente |
-| G2 | 43 | panic (spegne tutte le note) |
-| B2 | 47 | silenzio dalla battuta successiva |
+| E2 | 40 | silenzio dalla battuta successiva |
+| F2 | 41 | panic (spegne tutte le note) |
+| F#2 / G#2 | 42 / 44 | brano precedente / successivo |
 | Program Change n | – | brano n+1 |
 | CC80 (SW1), CC82 (pedale) | – | fill |
 | CC81 (SW2) | – | groove successivo |
