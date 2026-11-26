@@ -8,6 +8,28 @@ libreria dei groove, li suona agganciati al clock della workstation e li invia a
 batteria: uno strumento software o una DAW attraverso la porta MIDI virtuale «Disableton», il
 sintetizzatore di macOS, oppure un kit di batteria della workstation stessa.
 
+## Le funzioni principali
+
+- **Batteria agganciata alla workstation.** Suona i tuoi groove MIDI esattamente al tempo del suo
+  clock, e parte e si ferma con lei (▶/■ in SEQ, «Avvia» in COMBI).
+- **Libreria e scaletta.** Importi i file .mid, crei i brani e per ognuno ordini i groove: intro,
+  strofa, ritornello, fill, finale. Ogni groove ha il suo comportamento: si ripete, suona una volta
+  e torna, passa al successivo, chiude il brano.
+- **Comandi dal vivo dalla workstation.** Tasti predefiniti (loop su C1–B1; avvia, fill, groove
+  precedente/successivo, pausa, stop, finale e cambio brano su C2–G#2), più pedale, manopole,
+  joystick e Program Change assegnabili con **Impara**. I cambi cadono sempre a tempo.
+- **Suono dove vuoi.** Strumento software o DAW tramite la porta virtuale «Disableton», il
+  sintetizzatore di macOS, oppure un kit di batteria della workstation stessa.
+- **Intensità.** Volume dei colpi regolabile dal vivo (anche da una manopola); versioni più forti o
+  più piano di un groove da salvare o esportare come .mid.
+- **Tre viste.** Preparazione (brani e groove), Comandi (la tastiera con le assegnazioni), Palco
+  (grande, leggibile da lontano).
+- **Pensata per il palco.** Panic, stop e pausa distinti, annulla (⌘Z) su ogni modifica,
+  aggiornamenti automatici, guida nel menu Aiuto, segnalazione dei problemi con il registro allegato.
+
+**Scarica l'ultima versione:** https://github.com/MicheleLoi/Disableton/releases/latest/download/Disableton.zip
+(la prima volta aprila con clic destro → Apri).
+
 **Istruzioni per l'uso: [docs/ISTRUZIONI.md](docs/ISTRUZIONI.md)** (anche dal menu Aiuto dell'app).
 
 Le scelte di progetto sono descritte in [docs/ARCHITETTURA.md](docs/ARCHITETTURA.md).
