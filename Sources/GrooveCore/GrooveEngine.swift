@@ -120,7 +120,9 @@ public final class GrooveEngine {
         self.song = song
         armedSlot = nil
         lastLoopSlot = nil
-        guard isRunning else { pending = nil; return }
+        // A batteria ferma, o in silenzio con il clock che continua (dopo un finale o uno stop
+        // in Combi), il nuovo brano aspetta un comando invece di partire da solo.
+        guard isRunning, segment != nil else { pending = nil; return }
         let next = song.autoStartSlot.flatMap { song.slots.indices.contains($0) ? $0 : nil }
         pending = Pending(slotIndex: next, boundary: boundary(for: .bar))
     }
@@ -135,6 +137,15 @@ public final class GrooveEngine {
             return
         }
         pending = Pending(slotIndex: index, boundary: boundary(for: slot.quantize))
+    }
+
+    /// True se il trasporto è avviato ma non suona niente e non c'è niente in coda.
+    public var isSilentWhileRunning: Bool { isRunning && segment == nil && pending == nil }
+
+    /// Fa partire il groove di avvio del brano (al momento scelto per quello slot).
+    public func triggerAutoStart() {
+        guard let song, let i = song.autoStartSlot, song.slots.indices.contains(i) else { return }
+        trigger(slot: i)
     }
 
     /// Esegue il primo slot di tipo fill del brano.

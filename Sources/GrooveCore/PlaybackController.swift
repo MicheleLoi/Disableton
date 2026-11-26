@@ -146,8 +146,29 @@ public final class PlaybackController {
         case .previousSlot: engine.triggerPreviousSlot()
         case .stopAtBarEnd: engine.stopAtNextBar()
         case .panic: for m in engine.panic() { output(m, now) }
+        case .start: startFromCommand(now: now)
         }
         notifyIfNeeded()
+    }
+
+    /// Il clock del Krome è arrivato da poco (trasporto avviato o no).
+    public func isClockReceiving(now: UInt64) -> Bool {
+        guard let last = lastClockTime else { return false }
+        return now <= last || now - last < 300_000_000
+    }
+
+    /// Comando "Avvia": se la batteria è ferma e il clock arriva, parte subito (posizione 0
+    /// sull'impulso più vicino) con il groove di avvio del brano. Il Krome non deve mandare Start.
+    /// Se il trasporto è avviato ma la batteria tace (dopo un finale o uno stop), riparte il groove
+    /// di avvio alla battuta successiva. Se sta suonando, il comando è ignorato.
+    private func startFromCommand(now: UInt64) {
+        if engine.isRunning {
+            if engine.isSilentWhileRunning { engine.triggerAutoStart() }
+            return
+        }
+        guard isClockReceiving(now: now) else { return }
+        follower.startNow(at: now)
+        engine.transportStarted(at: 0)
     }
 
     public func selectSong(_ index: Int) {

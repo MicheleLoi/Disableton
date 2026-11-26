@@ -182,4 +182,95 @@ final class PlaybackControllerTests: XCTestCase {
         controller.process(now: t0 + 60 * 1_000_000_000)
         XCTAssertEqual(count, 5) // colpi fino al tick 23*40 + 3840 = 4760: 0, 960, 1920, 2880, 3840
     }
+
+    /// "Avvia" con il clock del Krome in corso ma senza Start (Combi): la batteria parte
+    /// sull'impulso più vicino e segue il clock; un secondo "Avvia" non la fa ripartire.
+    func testStartCommandFollowsRunningClockWithoutStart() {
+        let verse = groove("strofa", [(0, 36), (960, 38)])
+        var sent: [(MIDIMessage, UInt64)] = []
+        let song = EngineSong(name: "A", slots: [EngineSlot(name: "A", groove: verse)], autoStartSlot: 0)
+        let controller = PlaybackController(songs: [song]) { sent.append(($0, $1)) }
+        let t0: UInt64 = 10_000_000_000
+        for i in 0..<48 { let t = t0 + UInt64(i) * clock120; controller.handle(.timingClock, at: t, now: t) }
+        XCTAssertFalse(controller.engine.isRunning)
+        // Comando poco dopo l'ultimo impulso ricevuto (47): la posizione 0 è quell'impulso.
+        let last = t0 + 47 * clock120
+        let press = last + clock120 / 4
+        controller.handle(.noteOn(channel: 15, note: 53, velocity: 100), at: press, now: press)
+        XCTAssertTrue(controller.engine.isRunning)
+        for i in 48..<80 {
+            let t = t0 + UInt64(i) * clock120
+            controller.handle(.timingClock, at: t, now: t)
+            if i == 60 { controller.handle(.noteOn(channel: 15, note: 53, velocity: 100), at: t, now: t) }
+        }
+        let notes = sent.filter { if case .noteOn = $0.0 { return true }; return false }
+        XCTAssertEqual(notes.map { $0.0 }, [.noteOn(channel: 9, note: 36, velocity: 100), .noteOn(channel: 9, note: 38, velocity: 100)])
+        XCTAssertEqual(Double(notes[0].1), Double(last), accuracy: 100_000)
+        XCTAssertEqual(Double(notes[1].1), Double(last + 24 * clock120), accuracy: 100_000)
+    }
+
+    func testStartCommandUsesNextClockWhenCloser() {
+        let verse = groove("strofa", [(0, 36)])
+        var sent: [(MIDIMessage, UInt64)] = []
+        let song = EngineSong(name: "A", slots: [EngineSlot(name: "A", groove: verse)], autoStartSlot: 0)
+        let controller = PlaybackController(songs: [song]) { sent.append(($0, $1)) }
+        let t0: UInt64 = 10_000_000_000
+        for i in 0..<48 { let t = t0 + UInt64(i) * clock120; controller.handle(.timingClock, at: t, now: t) }
+        let press = t0 + 47 * clock120 + clock120 * 3 / 4
+        controller.perform(.start, now: press)
+        let next = t0 + 48 * clock120
+        controller.handle(.timingClock, at: next, now: next)
+        XCTAssertEqual(sent.first?.0, .noteOn(channel: 9, note: 36, velocity: 100))
+        XCTAssertEqual(Double(sent.first?.1 ?? 0), Double(next), accuracy: 100_000)
+    }
+
+    func testStartCommandIgnoredWithoutClock() {
+        let song = EngineSong(name: "A", slots: [EngineSlot(name: "A", groove: groove("a", [(0, 36)]))], autoStartSlot: 0)
+        let controller = PlaybackController(songs: [song]) { _, _ in }
+        controller.perform(.start, now: 5_000_000_000)
+        XCTAssertFalse(controller.engine.isRunning)
+        // Clock fermo da più di 0,3 s: niente partenza.
+        controller.handle(.timingClock, at: 5_000_000_000, now: 5_000_000_000)
+        controller.perform(.start, now: 6_000_000_000)
+        XCTAssertFalse(controller.engine.isRunning)
+    }
+
+    /// Dopo il silenzio (stop o finale) il clock continua: "Avvia" fa ripartire il groove di avvio
+    /// alla battuta successiva, e un cambio di brano non fa partire niente da solo.
+    func testStartCommandRestartsAfterSilenceAndSongChangeWaits() {
+        let verse = groove("strofa", [(0, 36)])
+        let other = groove("altro", [(0, 42)])
+        var sent: [MIDIMessage] = []
+        let songs = [EngineSong(name: "A", slots: [EngineSlot(name: "A", groove: verse)], autoStartSlot: 0),
+                     EngineSong(name: "B", slots: [EngineSlot(name: "B", groove: other)], autoStartSlot: 0)]
+        let controller = PlaybackController(songs: songs) { m, _ in sent.append(m) }
+        let t0: UInt64 = 10_000_000_000
+        var i = 0
+        func clocks(_ n: Int) {
+            for _ in 0..<n { let t = t0 + UInt64(i) * clock120; controller.handle(.timingClock, at: t, now: t); i += 1 }
+        }
+        clocks(24)
+        controller.perform(.start, now: t0 + 23 * clock120)
+        clocks(10)
+        controller.perform(.stopAtBarEnd, now: 0)
+        clocks(200)
+        XCTAssertTrue(controller.engine.isSilentWhileRunning)
+        let hits = sent.filter { $0 == .noteOn(channel: 9, note: 36, velocity: 100) }.count
+        // Cambio brano in silenzio: non parte niente.
+        controller.selectSong(1)
+        clocks(200)
+        XCTAssertTrue(controller.engine.isSilentWhileRunning)
+        XCTAssertFalse(sent.contains(.noteOn(channel: 9, note: 42, velocity: 100)))
+        // "Avvia" fa ripartire il brano B alla battuta successiva.
+        controller.perform(.start, now: t0 + UInt64(i - 1) * clock120)
+        clocks(200)
+        XCTAssertTrue(sent.contains(.noteOn(channel: 9, note: 42, velocity: 100)))
+        XCTAssertEqual(sent.filter { $0 == .noteOn(channel: 9, note: 36, velocity: 100) }.count, hits)
+    }
+
+    func testStartActionRoundTrip() {
+        XCTAssertEqual(ControlAction(string: "start"), .start)
+        XCTAssertEqual(ControlAction.start.description, "start")
+        XCTAssertEqual(ControlMap.default.action(for: .noteOn(channel: 15, note: 53, velocity: 100)), .start)
+    }
 }

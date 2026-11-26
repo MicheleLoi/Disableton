@@ -35,12 +35,13 @@ extension ControlAction {
         case .previousSlot: return "Groove precedente"
         case .stopAtBarEnd: return "Silenzio a fine battuta"
         case .panic: return "Panic (spegni tutto)"
+        case .start: return "Avvia (al tempo del Krome)"
         }
     }
 
     /// Azioni proposte nel menu "Aggiungi comando".
     static var menuChoices: [ControlAction] {
-        [.fill, .nextSlot, .previousSlot, .stopAtBarEnd, .nextSong, .previousSong,
+        [.start, .fill, .nextSlot, .previousSlot, .stopAtBarEnd, .nextSong, .previousSong,
          .selectSongFromProgram, .panic] + (0..<12).map { ControlAction.triggerSlot($0) }
     }
 }

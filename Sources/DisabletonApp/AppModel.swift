@@ -332,6 +332,13 @@ final class AppModel: ObservableObject {
             perform(action)
         case .panic:
             panic()
+        case .start:
+            guard !isPlaying else { return }
+            guard snapshot?.clockReceiving == true else {
+                errorMessage = "«Avvia» parte al tempo del Krome, ma il clock del Krome non arriva. Per provare senza Krome usa ▶ Prova senza Krome."
+                return
+            }
+            perform(action)
         default:
             perform(action)
         }

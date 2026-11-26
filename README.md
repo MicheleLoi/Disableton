@@ -157,6 +157,7 @@ Avvia il sequencer del Krome: il primo groove parte sul primo battere. Con note 
 | C3 | 48 | fill, poi ritorno al groove precedente |
 | D3 | 50 | groove successivo |
 | E3 | 52 | silenzio dalla battuta successiva |
+| F3 | 53 | avvia: la batteria parte al tempo del Krome anche senza Start (es. in Combi); ignorato se sta già suonando |
 | B3 | 59 | panic (spegne tutte le note) |
 | C#3 / D#3 | 49 / 51 | brano precedente / successivo |
 | Program Change n | – | brano n+1 |

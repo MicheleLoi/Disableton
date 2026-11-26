@@ -16,6 +16,9 @@ public enum ControlAction: Hashable, Sendable, Codable, CustomStringConvertible 
     case previousSlot
     case stopAtBarEnd
     case panic
+    /// Fa partire la batteria al tempo del clock del Krome, senza messaggio Start (es. in Combi).
+    /// Ignorato se la batteria sta già suonando.
+    case start
 
     public init?(string: String) {
         let parts = string.split(separator: ":", maxSplits: 1).map { String($0).trimmingCharacters(in: .whitespaces) }
@@ -36,6 +39,7 @@ public enum ControlAction: Hashable, Sendable, Codable, CustomStringConvertible 
         case "previousSlot": self = .previousSlot
         case "stopAtBarEnd": self = .stopAtBarEnd
         case "panic": self = .panic
+        case "start": self = .start
         default: return nil
         }
     }
@@ -52,6 +56,7 @@ public enum ControlAction: Hashable, Sendable, Codable, CustomStringConvertible 
         case .previousSlot: return "previousSlot"
         case .stopAtBarEnd: return "stopAtBarEnd"
         case .panic: return "panic"
+        case .start: return "start"
         }
     }
 
@@ -138,7 +143,7 @@ public struct ControlMap: Codable, Equatable, Sendable {
     /// - Program Change n → brano n+1
     /// - note 36…47 (C2…B2) → slot 1…12
     /// - 48 (C3) fill, 49 (C#3) brano precedente, 50 (D3) groove successivo,
-    ///   51 (D#3) brano successivo, 52 (E3) silenzio a fine battuta, 59 (B3) panic
+    ///   51 (D#3) brano successivo, 52 (E3) silenzio a fine battuta, 53 (F3) avvia, 59 (B3) panic
     /// - CC 80 (SW1) fill, CC 81 (SW2) groove successivo, CC 82 (pedale) fill
     public static let `default`: ControlMap = {
         let ch = 16
@@ -154,6 +159,7 @@ public struct ControlMap: Codable, Equatable, Sendable {
             ControlBinding(kind: .note, channel: ch, number: 50, action: .nextSlot),
             ControlBinding(kind: .note, channel: ch, number: 51, action: .nextSong),
             ControlBinding(kind: .note, channel: ch, number: 52, action: .stopAtBarEnd),
+            ControlBinding(kind: .note, channel: ch, number: 53, action: .start),
             ControlBinding(kind: .note, channel: ch, number: 59, action: .panic),
             ControlBinding(kind: .controlChange, channel: ch, number: 80, action: .fill),
             ControlBinding(kind: .controlChange, channel: ch, number: 81, action: .nextSlot),

@@ -57,6 +57,24 @@ public final class ClockFollower {
         isRunning = true
     }
 
+    /// Avvio senza messaggio Start (comando "Avvia" con il clock già in corso): la posizione 0
+    /// è l'impulso più vicino all'istante indicato, già ricevuto o il prossimo.
+    public func startNow(at time: UInt64) {
+        resumeClock = 0
+        isRunning = true
+        if let f = fit, let last = window.last {
+            let dt = Double(Int64(bitPattern: time &- f.anchorTime)) - f.anchorOffset
+            let position = Double(f.anchorCounter) + dt / f.nsPerClock
+            if position - Double(last.counter) < 0.5 {
+                songBase = last.counter
+                pendingStartClock = nil
+                return
+            }
+        }
+        songBase = nil
+        pendingStartClock = 0
+    }
+
     public func continuePlayback() {
         pendingStartClock = resumeClock
         songBase = nil

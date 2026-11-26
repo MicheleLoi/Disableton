@@ -170,6 +170,7 @@ struct KeyButton: View {
         case .previousSong: return "◀B"
         case .stopAtBarEnd: return "STOP"
         case .panic: return "PANIC"
+        case .start: return "AVVIA"
         case let .selectSong(i): return "B\(i + 1)"
         case .selectSongFromProgram: return "PC"
         }
