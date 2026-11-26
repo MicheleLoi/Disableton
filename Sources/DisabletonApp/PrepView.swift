@@ -267,6 +267,16 @@ struct SlotCard: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .lineLimit(1)
+            HStack {
+                Spacer()
+                Button { model.playSlot(index) } label: {
+                    Label(playing ? "Sta suonando" : (pending ? "In coda" : "Suona"), systemImage: "play.fill")
+                }
+                .buttonStyle(.borderless)
+                .disabled(playing || pending)
+                .help("Fa partire questo groove: subito se la batteria è ferma, altrimenti al momento scelto in «Cambio» (di solito la battuta successiva)")
+                .accessibilityLabel("Fai partire \(model.displayName(of: slot))")
+            }
         }
         .padding(12)
         .frame(maxWidth: .infinity, minHeight: 96, alignment: .topLeading)

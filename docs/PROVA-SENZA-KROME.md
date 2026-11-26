@@ -47,8 +47,8 @@ e scompattalo: ottieni la cartella *Groove di prova*.
 8. Impostazioni → Suono della batteria → **Sintetizzatore integrato di macOS** → Fine (o Esc).
 9. Clicca "Prova rock" in scaletta, poi **▶ Prova senza Krome** nella barra nera (o ⌘R).
    → Barra nera: "Clock interno", battuta e 4 pallini che avanzano; suona *Rock strofa* (scheda verde).
-10. Clic destro su *Rock ritornello* → **Fai partire questo groove** (oppure selezionalo e premi
-    **Fai partire nel brano** a destra).
+10. Sulla scheda di *Rock ritornello* premi **▶ Suona** (oppure clic destro → **Fai partire questo
+    groove**).
     → Scheda arancione ("in coda", con **Annulla** nella barra nera), poi alla battuta successiva
     parte il ritornello: il cambio cade esattamente sul battere, senza buchi né colpi doppi.
 11. Fai partire *Fill tom* → una battuta di fill, poi torna da solo al ritornello.
