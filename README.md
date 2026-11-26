@@ -220,3 +220,12 @@ Modalità degli slot (`--mode`):
 
 Momento del cambio (`--quantize`): `bar` (battuta, predefinito), `beat` (battito), `end`
 (fine del groove in corso).
+
+## Licenza
+
+Disableton è software libero: puoi ridistribuirlo e modificarlo secondo i termini della
+**GNU General Public License versione 3** (GPL-3.0), come pubblicata dalla Free Software Foundation.
+Chi distribuisce una versione modificata deve renderne disponibile il codice con la stessa licenza.
+Il testo completo è nel file [LICENSE](LICENSE).
+
+Copyright © 2026 MicheleLoi.
