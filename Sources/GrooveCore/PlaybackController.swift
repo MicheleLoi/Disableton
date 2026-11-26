@@ -50,6 +50,9 @@ public final class PlaybackController {
     public private(set) var lastCommand: MIDIMessage?
 
     private var lastStatus: PlaybackStatus?
+    /// Controller attualmente "sopra la metà" (canale << 8 | numero): un comando da controller
+    /// scatta solo quando il valore sale oltre 63, così una manopola girata non lo ripete.
+    private var controllersAboveHalf = Set<Int>()
 
     public init(songs: [EngineSong], controlMap: ControlMap = .default, outputChannel: UInt8 = 9,
                 settings: Settings = Settings(), output: @escaping (MIDIMessage, UInt64) -> Void) {
@@ -120,6 +123,15 @@ public final class PlaybackController {
         case .activeSensing:
             break
         default:
+            if case let .controlChange(channel, controller, value) = message, learnCapture == nil {
+                let key = Int(channel) << 8 | Int(controller)
+                let wasAbove = controllersAboveHalf.contains(key)
+                if value >= 64 { controllersAboveHalf.insert(key) } else { controllersAboveHalf.remove(key) }
+                if wasAbove && value >= 64, controlMap.action(for: message) != nil {
+                    // Già sopra la metà (manopola che continua a salire): nessun nuovo comando.
+                    break
+                }
+            }
             if let capture = learnCapture, ControlBinding.learn(from: message, action: .fill) != nil {
                 learnCapture = nil
                 lastCommand = message

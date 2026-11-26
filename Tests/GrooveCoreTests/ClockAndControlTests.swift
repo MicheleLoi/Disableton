@@ -272,6 +272,28 @@ final class PlaybackControllerTests: XCTestCase {
         XCTAssertEqual(sent.filter { $0 == .noteOn(channel: 9, note: 36, velocity: 100) }.count, hits)
     }
 
+    /// Una manopola che manda molti valori sopra la metà fa scattare il comando una volta sola;
+    /// riportata sotto la metà e rigirata, scatta di nuovo.
+    func testControllerTriggersOnlyWhenCrossingHalf() {
+        let a = groove("a", [(0, 36)])
+        let song = EngineSong(name: "A", slots: [EngineSlot(name: "1", groove: a), EngineSlot(name: "2", groove: a),
+                                                 EngineSlot(name: "3", groove: a)], autoStartSlot: 0)
+        let map = ControlMap(bindings: [ControlBinding(kind: .controlChange, channel: 1, number: 20, action: .nextSlot)])
+        let controller = PlaybackController(songs: [song], controlMap: map) { _, _ in }
+        controller.handle(.start, at: 0, now: 0)
+        controller.handle(.timingClock, at: 0, now: 0)
+        for v in stride(from: 40, through: 127, by: 3) {
+            controller.handle(.controlChange(channel: 0, controller: 20, value: UInt8(v)), at: 0, now: 0)
+        }
+        XCTAssertEqual(controller.engine.pendingSlotIndex, 1)
+        for v in stride(from: 127, through: 0, by: -9) {
+            controller.handle(.controlChange(channel: 0, controller: 20, value: UInt8(v)), at: 0, now: 0)
+        }
+        XCTAssertEqual(controller.engine.pendingSlotIndex, 1)
+        controller.handle(.controlChange(channel: 0, controller: 20, value: 100), at: 0, now: 0)
+        XCTAssertEqual(controller.engine.pendingSlotIndex, 2)
+    }
+
     func testStartActionRoundTrip() {
         XCTAssertEqual(ControlAction(string: "start"), .start)
         XCTAssertEqual(ControlAction.start.description, "start")
