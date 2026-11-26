@@ -109,6 +109,10 @@ struct ModeBar: View {
             ElementHelpView()
                 .frame(width: 700, height: 640)
         }
+        .sheet(isPresented: $model.showGrooveHelp) {
+            GrooveHelpView()
+                .frame(width: 700, height: 640)
+        }
         .sheet(isPresented: $model.showDAWHelp) {
             DAWHelpView()
                 .environmentObject(model)

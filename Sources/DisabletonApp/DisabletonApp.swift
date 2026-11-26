@@ -56,6 +56,7 @@ struct DisabletonApp: App {
             CommandGroup(replacing: .help) {
                 Button("Connecting a DAW (example: REAPER)…") { model.openDAWHelp() }
                 Button("Element: plugin instruments without a DAW…") { model.openElementHelp() }
+                Button("Fills, endings and groove behaviour…") { model.openGrooveHelp() }
                 Divider()
                 Button("Segnala un problema…") { model.openReport() }
                 Button("Mostra il registro") { model.revealLog() }

@@ -458,6 +458,10 @@ struct SlotInspector: View {
                     Picker("Cambio", selection: model.slotBinding(song: song.id, slot: slot.id, \.quantize, fallback: .bar)) {
                         ForEach(Quantize.allCases, id: \.self) { q in Text(q.label).tag(q) }
                     }
+                    Button { model.openGrooveHelp() } label: {
+                        Label("Fill, finali e comportamento: guida", systemImage: "questionmark.circle")
+                    }
+                    .buttonStyle(.link)
                     Toggle("Parte allo Start del Krome", isOn: Binding(
                         get: { model.library.songs.indices.contains(s) && model.library.songs[s].autoStartSlot == k },
                         set: { on in model.library.setAutoStart(song: s, slotID: on ? slot.id : nil) }))

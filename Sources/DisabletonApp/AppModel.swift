@@ -49,6 +49,7 @@ final class AppModel: ObservableObject {
     @Published var confirmDeleteSong = false
     @Published var showDAWHelp = false
     @Published var showElementHelp = false
+    @Published var showGrooveHelp = false
     @Published var confirmInstallUpdate = false
     /// Avviso breve mostrato nella barra di stato (es. dopo un MIDI Learn).
     @Published private(set) var notice: String?
@@ -356,6 +357,14 @@ final class AppModel: ObservableObject {
         if mode == .stage { mode = .prep }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             self?.showElementHelp = true
+        }
+    }
+
+    func openGrooveHelp() {
+        showSettings = false
+        if mode == .stage { mode = .prep }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.showGrooveHelp = true
         }
     }
 
