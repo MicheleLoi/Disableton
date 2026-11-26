@@ -39,7 +39,7 @@ struct DisabletonApp: App {
                     .keyboardShortcut(.delete, modifiers: .command)
             }
             CommandMenu("Riproduzione") {
-                Button("Prova senza Krome") { model.startInternalClock() }
+                Button("Prova senza workstation") { model.startInternalClock() }
                     .keyboardShortcut("r")
                     .disabled(model.isPlaying || model.selectedSongIndex == nil)
                 Button("Stop") { model.stopPlayback() }

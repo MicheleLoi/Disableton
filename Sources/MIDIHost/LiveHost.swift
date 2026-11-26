@@ -12,9 +12,9 @@ public struct LiveSnapshot: Equatable {
     public var beatsPerBar: Int
     /// Tempo arrotondato a 0,1 BPM.
     public var tempoBPM: Double?
-    /// Clock del Krome ricevuto negli ultimi 300 ms.
+    /// Clock della workstation ricevuto negli ultimi 300 ms.
     public var clockReceiving: Bool
-    /// Clock interno attivo (prova senza Krome).
+    /// Clock interno attivo (prova senza workstation).
     public var internalClock: Bool
     public var lastCommand: String?
     /// Ultimo messaggio MIDI ricevuto non associato ad alcun comando (es. canale sbagliato).
@@ -31,8 +31,8 @@ public struct LiveSnapshot: Equatable {
     public var intensity: Double = 1
 }
 
-/// Motore dal vivo completo: ingresso dal Krome, uscita verso EZdrummer / sintetizzatore di
-/// macOS / Krome, thread di generazione ad alta priorità, clock interno, ascolto e MIDI Learn.
+/// Motore dal vivo completo: ingresso dalla workstation, uscita verso la porta virtuale / sintetizzatore di
+/// macOS / workstation, thread di generazione ad alta priorità, clock interno, ascolto e MIDI Learn.
 /// Tutti i metodi pubblici sono sicuri da chiamare dal thread principale.
 public final class LiveHost {
     public static let virtualPortName = "Disableton"
@@ -42,7 +42,7 @@ public final class LiveHost {
         MIDIBackend.sources.map { $0.name }.filter { $0 != virtualPortName }
     }
 
-    /// Nomi delle destinazioni MIDI disponibili (per inviare la batteria al Krome).
+    /// Nomi delle destinazioni MIDI disponibili (per inviare la batteria alla workstation).
     public static func destinationNames() -> [String] {
         MIDIBackend.destinations.map { $0.name }
     }
@@ -58,14 +58,14 @@ public final class LiveHost {
     private var learning = false
     private var connected: [String] = []
     private var realtimeGranted = false
-    private var output = SoundOutput.ezdrummer
+    private var output = SoundOutput.virtualPort
     private var outputDescription = ""
     private var synth: AnyObject?
     private var lastUnmapped: MIDIMessage?
 
     public init(songs: [EngineSong], controlMap: ControlMap, outputChannel: Int,
                 settings: PlaybackController.Settings, inputFilter: String?,
-                output: SoundOutput = .ezdrummer, destinationFilter: String? = nil) throws {
+                output: SoundOutput = .virtualPort, destinationFilter: String? = nil) throws {
         let backend = try MIDIBackend(clientName: "Disableton")
         try backend.createVirtualSource(named: LiveHost.virtualPortName)
         self.backend = backend
@@ -83,7 +83,7 @@ public final class LiveHost {
         }
         connected = try backend.connectSources(matching: inputFilter)
         configureOutput(output, destinationFilter: destinationFilter)
-        PerformanceGuard.begin(reason: "Riproduzione groove sincronizzata al Krome")
+        PerformanceGuard.begin(reason: "Riproduzione groove sincronizzata alla workstation")
         startWorker()
     }
 
@@ -155,14 +155,14 @@ public final class LiveHost {
         lock.lock(); defer { lock.unlock() }
         for m in controller.engine.panic() { route(m, at: 0) }
         self.output = output
-        backend.sendsToVirtualSource = output == .ezdrummer
+        backend.sendsToVirtualSource = output == .virtualPort
         backend.setDestinations(matching: nil)
         if output != .builtInSynth, let old = synth {
             stopSynth(old)
             synth = nil
         }
         switch output {
-        case .ezdrummer:
+        case .virtualPort:
             outputDescription = "Porta virtuale \"\(LiveHost.virtualPortName)\""
         case .midiDestination:
             let names = backend.setDestinations(matching: destinationFilter)
@@ -189,8 +189,8 @@ public final class LiveHost {
         controller.engine.velocityScale = min(2, max(0.5, factor))
     }
 
-    /// Emergenza: silenzio immediato. Ferma ascolto e clock interno; con il Krome il groove
-    /// si ferma subito (il trasporto del Krome continua, un nuovo comando fa ripartire).
+    /// Emergenza: silenzio immediato. Ferma ascolto e clock interno; con la workstation il groove
+    /// si ferma subito (il trasporto della workstation continua, un nuovo comando fa ripartire).
     public func panic() {
         lock.lock(); defer { lock.unlock() }
         stopInternalLocked(now: HostClock.nowNanos())
@@ -205,8 +205,8 @@ public final class LiveHost {
 
     // MARK: - Clock interno
 
-    /// Avvia il brano corrente con il clock interno (prova senza Krome). I comandi dal Krome
-    /// continuano a funzionare; clock e trasporto del Krome vengono ignorati.
+    /// Avvia il brano corrente con il clock interno (prova senza workstation). I comandi dalla workstation
+    /// continuano a funzionare; clock e trasporto della workstation vengono ignorati.
     public func startInternalClock(bpm: Double) {
         lock.lock(); defer { lock.unlock() }
         let now = HostClock.nowNanos()
@@ -222,7 +222,7 @@ public final class LiveHost {
         stopInternalLocked(now: HostClock.nowNanos())
     }
 
-    /// Suona un groove in ripetizione al tempo indicato, senza il Krome.
+    /// Suona un groove in ripetizione al tempo indicato, senza la workstation.
     public func startPreview(groove: Groove, bpm: Double) {
         lock.lock(); defer { lock.unlock() }
         let now = HostClock.nowNanos()
@@ -286,7 +286,7 @@ public final class LiveHost {
     /// Invio verso l'uscita scelta. Chiamato con il lock acquisito.
     private func route(_ message: MIDIMessage, at time: UInt64) {
         switch output {
-        case .ezdrummer, .midiDestination:
+        case .virtualPort, .midiDestination:
             backend.send(message, atNanos: time)
         case .builtInSynth:
             sendToSynth(message, at: time)

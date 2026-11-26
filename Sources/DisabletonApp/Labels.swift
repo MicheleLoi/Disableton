@@ -37,7 +37,7 @@ extension ControlAction {
         case .stopAtBarEnd: return "Pausa a fine battuta (riprende a tempo)"
         case .stopNow: return "Stop (ferma; riparte con Avvia)"
         case .panic: return "Panic (spegni tutto)"
-        case .start: return "Avvia (al tempo del Krome)"
+        case .start: return "Avvia (al tempo della workstation)"
         case .intensity: return "Intensità della batteria (manopola)"
         }
     }
@@ -79,7 +79,7 @@ extension TimeSignature {
     }
 }
 
-/// Nota predefinita sul Krome per lo slot `index` (canale 16).
+/// Nota predefinita sulla workstation per lo slot `index` (canale 16).
 func defaultNoteLabel(forSlot index: Int) -> String? {
     guard index < 12 else { return nil }
     let note = 24 + index

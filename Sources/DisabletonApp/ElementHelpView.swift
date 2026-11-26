@@ -28,8 +28,8 @@ struct ElementHelpView: View {
                         bullet("The drum instrument you want exists only as a plugin, with no standalone app.")
                         bullet("You want a light setup that opens the same way every time on stage, instead of a full DAW. It's also free, while REAPER needs a license.")
                         Text("When you don't need it").font(.headline).padding(.top, 6)
-                        bullet("The instrument has its own standalone app (EZdrummer 3, Analog Lab, Pigments): just select “\(LiveHost.virtualPortName)” as the MIDI input in that app.")
-                        bullet("You use the macOS synth or the Krome: Disableton reaches them on its own.")
+                        bullet("The instrument has its own standalone app (for example Analog Lab or Pigments): just select “\(LiveHost.virtualPortName)” as the MIDI input in that app.")
+                        bullet("You use the macOS synth or the workstation: Disableton reaches them on its own.")
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
@@ -45,7 +45,7 @@ struct ElementHelpView: View {
                         "In Disableton: Settings → Suono della batteria (drum sound) → “Porta virtuale «\(LiveHost.virtualPortName)»” (virtual port). Keep Disableton open.",
                         "Open Element. In its preferences, MIDI section, enable the “\(LiveHost.virtualPortName)” input. If it isn't listed, quit and reopen Element with Disableton already open.",
                         "Load the drum instrument, then connect the MIDI input to the instrument and the instrument to the audio output.",
-                        "Test: in Disableton press ▶ Prova senza Krome (play without Krome). The instrument in Element should play.",
+                        "Test: in Disableton press ▶ Prova senza workstation (play without workstation). The instrument in Element should play.",
                     ])
 
                     Text("Playing several instruments at once (one drum sound each) needs a Disableton feature that's still in preparation; when it's ready, this page will explain how to use it with Element.")

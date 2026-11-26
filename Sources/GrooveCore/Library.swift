@@ -2,8 +2,14 @@ import Foundation
 
 /// Provenienza di un groove.
 public enum GrooveSource: String, Codable, Sendable {
-    case ezdrummer
+    /// Groove arrivato da un altro programma (valore delle librerie precedenti).
+    case imported
     case user
+
+    public init(from decoder: Decoder) throws {
+        let value = try decoder.singleValueContainer().decode(String.self)
+        self = GrooveSource(rawValue: value) ?? (value == "user" ? .user : .imported)
+    }
 }
 
 public struct GrooveRecord: Codable, Identifiable, Equatable, Sendable {
@@ -115,12 +121,18 @@ public struct SongRecord: Codable, Identifiable, Equatable, Sendable {
 
 /// Dove vanno le note della batteria.
 public enum SoundOutput: String, Codable, Sendable, CaseIterable {
-    /// Porta virtuale "Disableton", da selezionare come ingresso in EZdrummer 3.
-    case ezdrummer
+    /// Porta virtuale "Disableton", da selezionare come ingresso nello strumento software o nella DAW.
+    case virtualPort
     /// Sintetizzatore General MIDI integrato in macOS (suoni di prova).
     case builtInSynth
-    /// Una destinazione MIDI esterna, per esempio il Krome con un kit di batteria.
+    /// Una destinazione MIDI esterna, per esempio la workstation con un kit di batteria.
     case midiDestination
+
+    public init(from decoder: Decoder) throws {
+        let value = try decoder.singleValueContainer().decode(String.self)
+        // Le librerie precedenti chiamavano la porta virtuale con il nome di un prodotto.
+        self = SoundOutput(rawValue: value) ?? .virtualPort
+    }
 }
 
 /// Impostazioni di esecuzione salvate con la libreria.
@@ -135,11 +147,11 @@ public struct PerformanceSettings: Codable, Equatable, Sendable {
     public var soundOutput: SoundOutput
     /// Parte del nome della destinazione MIDI esterna (per `midiDestination`).
     public var destinationFilter: String?
-    /// Tempo del clock interno (prove senza Krome e ascolto).
+    /// Tempo del clock interno (prove senza workstation e ascolto).
     public var internalBPM: Double
 
     public init(inputFilter: String? = nil, latencyMs: Double = 0, lookaheadMs: Double = 2,
-                soundOutput: SoundOutput = .ezdrummer, destinationFilter: String? = "KROME",
+                soundOutput: SoundOutput = .virtualPort, destinationFilter: String? = nil,
                 internalBPM: Double = 120) {
         self.inputFilter = inputFilter
         self.latencyMs = latencyMs
@@ -158,12 +170,8 @@ public struct PerformanceSettings: Codable, Equatable, Sendable {
         inputFilter = try c.decodeIfPresent(String.self, forKey: .inputFilter)
         latencyMs = try c.decodeIfPresent(Double.self, forKey: .latencyMs) ?? 0
         lookaheadMs = try c.decodeIfPresent(Double.self, forKey: .lookaheadMs) ?? 2
-        soundOutput = try c.decodeIfPresent(SoundOutput.self, forKey: .soundOutput) ?? .ezdrummer
-        if c.contains(.destinationFilter) {
-            destinationFilter = try c.decodeIfPresent(String.self, forKey: .destinationFilter)
-        } else {
-            destinationFilter = "KROME"
-        }
+        soundOutput = try c.decodeIfPresent(SoundOutput.self, forKey: .soundOutput) ?? .virtualPort
+        destinationFilter = try c.decodeIfPresent(String.self, forKey: .destinationFilter)
         internalBPM = try c.decodeIfPresent(Double.self, forKey: .internalBPM) ?? 120
     }
 
@@ -180,7 +188,7 @@ public struct Library: Codable, Equatable, Sendable {
     public var grooves: [GrooveRecord]
     public var songs: [SongRecord]
     public var controlMap: ControlMap
-    /// Canale MIDI verso EZdrummer, 1-16.
+    /// Canale MIDI della batteria in uscita, 1-16.
     public var outputChannel: Int
     public var performance: PerformanceSettings
 

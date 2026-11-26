@@ -33,7 +33,7 @@ public struct MIDIBackendError: Error, CustomStringConvertible {
     public var description: String { "\(call) non riuscita (OSStatus \(status))" }
 }
 
-/// Ingresso dal Krome e porta virtuale di uscita verso EZdrummer (protocollo MIDI 1.0 via UMP).
+/// Ingresso dalla workstation e porta virtuale di uscita verso gli strumenti (protocollo MIDI 1.0 via UMP).
 public final class MIDIBackend {
     public struct Endpoint {
         public let ref: MIDIEndpointRef
@@ -81,7 +81,7 @@ public final class MIDIBackend {
         return names
     }
 
-    /// Crea una destinazione virtuale (es. un "Krome simulato" nei test): i messaggi ricevuti
+    /// Crea una destinazione virtuale (es. una "workstation simulata" nei test): i messaggi ricevuti
     /// arrivano a `onMessage` come quelli delle sorgenti collegate.
     public func createVirtualDestination(named name: String) throws {
         let status = MIDIDestinationCreateWithProtocol(client, name as CFString, ._1_0, &virtualDestination) { [weak self] list, _ in
@@ -133,7 +133,7 @@ public final class MIDIBackend {
         connected.removeAll()
     }
 
-    /// Crea la porta virtuale che EZdrummer vedrà come ingresso MIDI.
+    /// Crea la porta virtuale che gli strumenti vedranno come ingresso MIDI.
     public func createVirtualSource(named name: String) throws {
         let status = MIDISourceCreateWithProtocol(client, name as CFString, ._1_0, &virtualSource)
         guard status == noErr else { throw MIDIBackendError(status: status, call: "MIDISourceCreate") }

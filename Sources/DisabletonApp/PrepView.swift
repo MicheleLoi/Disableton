@@ -56,7 +56,7 @@ struct SetlistColumn: View {
                             if model.snapshot?.status.songIndex == index {
                                 Image(systemName: "play.fill")
                                     .foregroundColor(.accentColor)
-                                    .accessibilityLabel("Brano selezionato sul Krome")
+                                    .accessibilityLabel("Brano selezionato sulla workstation")
                             }
                             if song.timeSignature != .fourFour {
                                 Text(song.timeSignature.description).font(.caption).foregroundColor(.secondary)
@@ -96,7 +96,7 @@ struct SetlistColumn: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            Text("Brano n = Program Change n−1 dal Krome.")
+            Text("Brano n = Program Change n−1 dalla workstation.")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 12)
@@ -143,7 +143,7 @@ struct SongSequence: View {
                         HStack(spacing: 10) {
                             Text("Sta suonando un altro brano.").foregroundColor(.secondary)
                             Button("Passa a questo brano") { model.perform(.selectSong(songIndex)) }
-                                .help("Cambia brano alla prossima battuta, come un Program Change dal Krome")
+                                .help("Cambia brano alla prossima battuta, come un Program Change dalla workstation")
                         }
                     }
 
@@ -342,7 +342,7 @@ struct LibraryStrip: View {
             }
 
             if model.library.grooves.isEmpty {
-                Text("La libreria è vuota: trascina qui i file .mid (dal Finder o da EZdrummer 3) oppure usa \"Importa .mid…\".")
+                Text("La libreria è vuota: trascina qui i file .mid (dal Finder o da un programma di batteria) oppure usa \"Importa .mid…\".")
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer()
@@ -472,12 +472,12 @@ struct SlotInspector: View {
                         Label("Fill, finali e comportamento: guida", systemImage: "questionmark.circle")
                     }
                     .buttonStyle(.link)
-                    Toggle("Parte allo Start del Krome", isOn: Binding(
+                    Toggle("Parte allo Start della workstation", isOn: Binding(
                         get: { model.library.songs.indices.contains(s) && model.library.songs[s].autoStartSlot == k },
                         set: { on in model.library.setAutoStart(song: s, slotID: on ? slot.id : nil) }))
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Tasto sul Krome").font(.caption).foregroundColor(.secondary)
+                        Text("Tasto sulla workstation").font(.caption).foregroundColor(.secondary)
                         HStack {
                             Text(keyLabel(forSlot: k)).fontWeight(.semibold)
                             Spacer()
@@ -488,7 +488,7 @@ struct SlotInspector: View {
                             }
                         }
                         if learning {
-                            Text("Premi un tasto sul Krome…").font(.caption).foregroundColor(.orange)
+                            Text("Premi un tasto sulla workstation…").font(.caption).foregroundColor(.orange)
                         }
                     }
 
@@ -510,7 +510,7 @@ struct SlotInspector: View {
                             .frame(maxWidth: .infinity)
                     }
                     .controlSize(.large)
-                    .help("Come il tasto del Krome: alla prossima battuta, oppure subito con il clock interno se è tutto fermo")
+                    .help("Come il tasto della workstation: alla prossima battuta, oppure subito con il clock interno se è tutto fermo")
 
                     if let record = model.library.groove(id: slot.grooveID) {
                         Button {

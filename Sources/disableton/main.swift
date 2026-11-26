@@ -2,7 +2,7 @@ import Foundation
 import GrooveCore
 
 let usage = """
-Disableton — groove MIDI per EZdrummer 3 sincronizzati al Korg Krome
+Disableton — groove MIDI di batteria sincronizzati al clock di una workstation
 
 Uso:
   disableton inspect <file.mid> [--bars N] [--meter 4/4] [--no-trim]
@@ -16,15 +16,15 @@ Uso:
 
   disableton play --loop a.mid [--loop b.mid] [--fill f.mid] [--ending e.mid] [--meter 4/4]
   disableton play --library [--dir cartella] [--song N]
-      Segue il clock del Krome e suona i groove sulla porta virtuale "Disableton".
+      Segue il clock della workstation e suona i groove sulla porta virtuale "Disableton".
       Opzioni: --input nome, --channel 10, --latency-ms 0, --lookahead-ms 2, --no-autostart,
-               --sound ezdrummer|synth|krome (--dest nome della destinazione MIDI, predefinito KROME)
+               --sound virtual|synth|midi (--dest nome della destinazione MIDI)
 
   disableton selftest [--seconds 5] [--bpm 120]
-      Verifica senza Krome: priorità tempo reale e puntualità del ciclo di generazione.
+      Verifica senza workstation: priorità tempo reale e puntualità del ciclo di generazione.
 
   disableton e2e [--bpm 120]
-      Prova della catena completa con un Krome e un EZdrummer simulati (porte virtuali).
+      Prova della catena completa con una workstation e uno strumento simulati (porte virtuali).
 
   disableton demo [--dir cartella] | demo --export cartella
       Aggiunge brani e groove dimostrativi alla libreria, oppure li scrive come file .mid.
@@ -34,7 +34,7 @@ Uso:
       add-song "Nome" [--meter 3/4]
       assign <n. brano> <nome groove> [--mode loop|fill|next|ending] [--quantize beat|bar|end]
 
-Comandi predefiniti dal Krome (canale 16, nomi Korg: 24 = C1, 36 = C2):
+Comandi predefiniti dalla workstation (canale 16, nomi Korg: 24 = C1, 36 = C2):
   Program Change n → brano n+1   note 24…35 (C1…B1) → slot 1…12
   36 avvia   37/39 groove precedente/successivo   38 fill   40 pausa a fine battuta
   41 stop   42/44 brano precedente/successivo   43 finale

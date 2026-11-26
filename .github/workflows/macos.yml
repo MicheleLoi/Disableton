@@ -61,7 +61,7 @@ jobs:
       - name: 9. Priorità tempo reale e puntualità del ciclo
         run: dist/disableton selftest --seconds 5
 
-      - name: 10. Catena MIDI completa (Krome simulato → Disableton → EZdrummer simulato)
+      - name: 10. Catena MIDI completa (workstation simulata → Disableton → strumento simulato)
         run: |
           dist/disableton e2e --bpm 120
           dist/disableton e2e --bpm 87

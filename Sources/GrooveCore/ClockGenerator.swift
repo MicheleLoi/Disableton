@@ -1,6 +1,6 @@
 import Foundation
 
-/// Clock interno (24 impulsi per quarto) per ascoltare i groove senza il Krome.
+/// Clock interno (24 impulsi per quarto) per ascoltare i groove senza la workstation.
 public struct ClockGenerator: Sendable {
     public let bpm: Double
     public let startTime: UInt64

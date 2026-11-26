@@ -1,7 +1,7 @@
 import Foundation
 
 /// Evento di un groove, con posizione in tick a `Groove.ppq`. Il canale non è memorizzato:
-/// in uscita tutti gli eventi vanno sul canale configurato per EZdrummer.
+/// in uscita tutti gli eventi vanno sul canale configurato per la batteria.
 public struct GrooveEvent: Equatable, Sendable {
     public enum Kind: Equatable, Sendable {
         case noteOn(note: UInt8, velocity: UInt8)
@@ -142,7 +142,7 @@ public struct GrooveImportOptions: Sendable {
     public var trimLeadingEmptyBars: Bool
     /// Metro forzato; se nil si usa quello del file, altrimenti 4/4.
     public var timeSignature: TimeSignature?
-    /// Conversione delle note (es. mappa Korg → EZdrummer).
+    /// Conversione delle note (es. da una disposizione delle note a un'altra).
     public var noteMap: NoteMap?
 
     public init(lengthBars: Int? = nil, trimLeadingEmptyBars: Bool = true,

@@ -82,5 +82,5 @@ func printLibrary(_ library: Library) {
             print("       slot \(j + 1): \(slot.name ?? grooveName) [\(slot.mode.rawValue), cambio a \(slot.quantize.rawValue)]\(key)")
         }
     }
-    print("\nUscita verso EZdrummer: canale \(library.outputChannel)")
+    print("\nCanale MIDI della batteria in uscita: \(library.outputChannel)")
 }

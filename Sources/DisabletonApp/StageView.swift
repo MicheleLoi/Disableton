@@ -114,7 +114,7 @@ struct StageView: View {
         guard let snap else { return "MOTORE FERMO" }
         if snap.internalClock { return "CLOCK INTERNO" }
         if snap.previewing { return "ASCOLTO" }
-        return snap.clockReceiving ? "CLOCK KROME" : "ATTESA CLOCK"
+        return snap.clockReceiving ? "CLOCK WORKSTATION" : "ATTESA CLOCK"
     }
 
     private func slot(_ index: Int?, in status: PlaybackStatus?) -> SlotRecord? {

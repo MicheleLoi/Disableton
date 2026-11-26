@@ -3,7 +3,7 @@ import GrooveCore
 import MIDIHost
 import SwiftUI
 
-/// Impostazioni (dall'ingranaggio): Krome, clock, suono della batteria, libreria.
+/// Impostazioni (dall'ingranaggio): workstation, clock, suono della batteria, libreria.
 struct SettingsView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
@@ -37,11 +37,11 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: Krome
+    // MARK: workstation
 
     private var kromeSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Krome").font(.headline)
+            Text("Workstation").font(.headline)
             HStack {
                 Picker("Ingresso MIDI", selection: inputFilter) {
                     Text("Tutte le sorgenti").tag(String?.none)
@@ -55,7 +55,7 @@ struct SettingsView: View {
             Text(model.connectedInputs.isEmpty ? "Nessuna sorgente collegata."
                  : "Collegate: " + model.connectedInputs.joined(separator: ", "))
                 .font(.caption).foregroundColor(.secondary)
-            Text("Sul Krome: GLOBAL → MIDI → MIDI Clock = Internal.")
+            Text("Sulla workstation imposta il MIDI Clock su Internal (sul Krome: GLOBAL → P1: MIDI → MIDI Clock).")
                 .font(.caption).foregroundColor(.secondary)
         }
     }
@@ -66,9 +66,9 @@ struct SettingsView: View {
         let internalRunning = model.snapshot?.internalClock == true
         return VStack(alignment: .leading, spacing: 10) {
             Text("Clock").font(.headline)
-            Text(internalRunning ? "In uso: clock interno (prova senza Krome)." : "In uso: clock dal Krome (esecuzione normale).")
+            Text(internalRunning ? "In uso: clock interno (prova senza workstation)." : "In uso: clock dalla workstation (esecuzione normale).")
             HStack(spacing: 12) {
-                Text("Prova senza Krome")
+                Text("Prova senza workstation")
                 Stepper(value: $model.library.performance.internalBPM, in: 40...240, step: 1) {
                     Text("\(Int(model.library.performance.internalBPM)) BPM").monospacedDigit()
                 }
@@ -86,7 +86,7 @@ struct SettingsView: View {
                 }
                 .disabled(!internalRunning)
             }
-            Text("Suona il brano selezionato in scaletta come se il Krome avesse premuto Start (si avvia anche con ▶ nella barra in alto o ⌘R). I comandi dal Krome (note, pedale, Program Change) continuano a funzionare; il suo clock viene ignorato finché premi Ferma.")
+            Text("Suona il brano selezionato in scaletta come se la workstation avesse premuto Start (si avvia anche con ▶ nella barra in alto o ⌘R). I comandi dalla workstation (note, pedale, Program Change) continuano a funzionare; il suo clock viene ignorato finché premi Ferma.")
                 .font(.caption).foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -98,9 +98,9 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Suono della batteria").font(.headline)
             Picker("Destinazione", selection: $model.library.performance.soundOutput) {
-                Text("Porta virtuale “\(LiveHost.virtualPortName)” (EZdrummer o altri strumenti software)").tag(SoundOutput.ezdrummer)
+                Text("Porta virtuale “\(LiveHost.virtualPortName)” (strumenti software e DAW)").tag(SoundOutput.virtualPort)
                 Text("Sintetizzatore integrato di macOS (suoni di prova)").tag(SoundOutput.builtInSynth)
-                Text("Strumento MIDI collegato (Krome o altro synth)").tag(SoundOutput.midiDestination)
+                Text("Strumento MIDI collegato (workstation o altro synth)").tag(SoundOutput.midiDestination)
             }
             .pickerStyle(.radioGroup)
             .labelsHidden()
@@ -113,14 +113,14 @@ struct SettingsView: View {
                     }
                 }
                 .frame(maxWidth: 420)
-                Text("Lo strumento deve suonare la batteria sul canale scelto qui sotto (es. sul Krome una traccia con un kit di batteria).")
+                Text("Lo strumento deve suonare la batteria sul canale scelto qui sotto (es. sulla workstation una traccia con un kit di batteria).")
                     .font(.caption).foregroundColor(.secondary)
-                Label("Attenzione: con questa uscita il pedale damper collegato al Krome (o a un altro strumento) può smettere di agire sui suoni dello strumento stesso. Se succede, usa la porta virtuale «\(LiveHost.virtualPortName)».", systemImage: "exclamationmark.triangle")
+                Label("Attenzione: con questa uscita il pedale damper collegato alla workstation (o a un altro strumento) può smettere di agire sui suoni dello strumento stesso. Se succede, usa la porta virtuale «\(LiveHost.virtualPortName)».", systemImage: "exclamationmark.triangle")
                     .font(.caption).foregroundColor(.orange)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            if model.library.performance.soundOutput == .ezdrummer {
-                Text("Nello strumento software (es. EZdrummer 3: Settings → MIDI) abilita l'ingresso “\(LiveHost.virtualPortName)”.")
+            if model.library.performance.soundOutput == .virtualPort {
+                Text("Nello strumento software o nella DAW scegli come ingresso MIDI “\(LiveHost.virtualPortName)”.")
                     .font(.caption).foregroundColor(.secondary)
                 HStack {
                     Button("Connecting a DAW (example: REAPER)…") { model.openDAWHelp() }
@@ -141,7 +141,7 @@ struct SettingsView: View {
                     .frame(width: 50, alignment: .leading)
                 Button("100%") { model.setLiveIntensity(1) }
             }
-            Text("Moltiplica la forza di tutti i colpi mentre suona (50–200%). Per comandarla da una manopola del Krome: Comandi → Aggiungi comando → «Intensità della batteria», poi gira la manopola. Manopola al centro = 100%.")
+            Text("Moltiplica la forza di tutti i colpi mentre suona (50–200%). Per comandarla da una manopola della workstation: Comandi → Aggiungi comando → «Intensità della batteria», poi gira la manopola. Manopola al centro = 100%.")
                 .font(.caption).foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -157,7 +157,7 @@ struct SettingsView: View {
                     Text(String(format: "%.1f ms", model.library.performance.latencyMs)).monospacedDigit()
                 }
             }
-            Text("Se la batteria arriva in ritardo rispetto ai suoni del Krome, aumenta l'anticipo.")
+            Text("Se la batteria arriva in ritardo rispetto ai suoni della workstation, aumenta l'anticipo.")
                 .font(.caption).foregroundColor(.secondary)
         }
     }

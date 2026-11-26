@@ -7,9 +7,9 @@ import Darwin
 import MIDIHost
 
 /// `disableton e2e [--bpm 120]`
-/// Prova completa della catena MIDI senza hardware: un "Krome simulato" (porta virtuale) invia
+/// Prova completa della catena MIDI senza hardware: una "workstation simulata" (porta virtuale) invia
 /// Program Change, Start, clock, comandi di cambio e fill, Stop, Song Position e Continue;
-/// un "EZdrummer simulato" ascolta la porta "Disableton". Si confrontano le note ricevute con
+/// uno "strumento simulato" ascolta la porta "Disableton". Si confrontano le note ricevute con
 /// quelle attese, nell'ordine e nei tempi.
 func runEndToEnd(_ argv: [String]) throws {
     let args = try Args(argv)
@@ -46,17 +46,17 @@ func runEndToEnd(_ argv: [String]) throws {
     collect(reference.render(to: resumeTick + resumeClocks * ticksPerClock), segment: 1)
 
     // Catena reale.
-    let krome = try MIDIBackend(clientName: "Krome simulato")
-    try krome.createVirtualSource(named: "Krome simulato")
+    let krome = try MIDIBackend(clientName: "Workstation simulata")
+    try krome.createVirtualSource(named: "Workstation simulata")
     let host = try LiveHost(songs: songs, controlMap: .default, outputChannel: 10,
-                            settings: PlaybackController.Settings(), inputFilter: "Krome simulato")
-    guard host.connectedInputs == ["Krome simulato"] else {
-        throw CLIError("Disableton non si è collegato al Krome simulato (collegati: \(host.connectedInputs))")
+                            settings: PlaybackController.Settings(), inputFilter: "Workstation simulata")
+    guard host.connectedInputs == ["Workstation simulata"] else {
+        throw CLIError("Disableton non si è collegato alla workstation simulata (collegati: \(host.connectedInputs))")
     }
-    let ezdrummer = try MIDIBackend(clientName: "EZdrummer simulato")
+    let instrument = try MIDIBackend(clientName: "Strumento simulato")
     let lock = NSLock()
     var received: [(message: MIDIMessage, timestamp: UInt64, arrival: UInt64)] = []
-    ezdrummer.onMessage = { message, time in
+    instrument.onMessage = { message, time in
         let arrival = HostClock.nowNanos()
         if case .noteOn = message {
             lock.lock()
@@ -64,12 +64,12 @@ func runEndToEnd(_ argv: [String]) throws {
             lock.unlock()
         }
     }
-    let outputs = try ezdrummer.connectSources(matching: LiveHost.virtualPortName)
+    let outputs = try instrument.connectSources(matching: LiveHost.virtualPortName)
     guard !outputs.isEmpty else { throw CLIError("porta \"\(LiveHost.virtualPortName)\" non trovata") }
     Thread.sleep(forTimeInterval: 0.5)
-    print("Catena: Krome simulato → Disableton → EZdrummer simulato (\(bpm) BPM)")
+    print("Catena: workstation simulata → Disableton → strumento simulato (\(bpm) BPM)")
 
-    // Il Krome simulato suona su un thread tempo reale, all'istante esatto di ogni impulso.
+    // La workstation simulata suona su un thread tempo reale, all'istante esatto di ogni impulso.
     var segmentStarts: [UInt64] = [0, 0]
     let done = DispatchSemaphore(value: 0)
     let player = Thread {

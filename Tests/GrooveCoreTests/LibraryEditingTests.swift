@@ -3,7 +3,7 @@ import XCTest
 
 final class LibraryEditingTests: XCTestCase {
     func makeLibrary() -> (Library, UUID, UUID) {
-        let a = GrooveRecord(name: "Strofa", fileName: "a.mid", source: .ezdrummer)
+        let a = GrooveRecord(name: "Strofa", fileName: "a.mid", source: .imported)
         let b = GrooveRecord(name: "Fill", fileName: "b.mid", source: .user)
         var lib = Library(grooves: [a, b])
         lib.addSong(name: "Uno")

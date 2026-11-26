@@ -6,7 +6,7 @@ import Darwin
 import MIDIHost
 
 /// `disableton selftest [--seconds N] [--bpm B]`
-/// Verifica sul Mac, senza Krome né EZdrummer: priorità tempo reale del thread e puntualità del
+/// Verifica sul Mac, senza workstation né strumento: priorità tempo reale del thread e puntualità del
 /// ciclo di generazione (stesso codice e stesso periodo usati dal vivo, con un clock interno).
 func runSelfTest(_ argv: [String]) throws {
     let args = try Args(argv)

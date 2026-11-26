@@ -4,7 +4,7 @@ import AudioToolbox
 import GrooveCore
 
 /// Sintetizzatore General MIDI integrato in macOS (Apple DLS Synth): suoni di prova gratuiti,
-/// con la batteria sul canale 10, per usare Disableton senza EZdrummer.
+/// con la batteria sul canale 10, per usare Disableton senza altri strumenti.
 public final class BuiltInSynth {
     private let engine = AVAudioEngine()
     private let instrument: AVAudioUnitMIDIInstrument

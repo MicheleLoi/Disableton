@@ -2,7 +2,7 @@
 import GrooveCore
 import SwiftUI
 
-/// Comandi: la zona di controllo del Krome disegnata come tastiera (C1–B2, canale 16),
+/// Comandi: la zona di controllo della workstation disegnata come tastiera (C1–B2, canale 16),
 /// gli altri controlli (SW1, SW2, pedale, Program Change) e il MIDI Learn.
 struct CommandsView: View {
     @EnvironmentObject var model: AppModel
@@ -12,7 +12,7 @@ struct CommandsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     HStack(alignment: .firstTextBaseline) {
-                        Text("Tasti del Krome · predefiniti sul canale 16 · imparati con il pallino").font(.headline)
+                        Text("Tasti della workstation · predefiniti sul canale 16 · imparati con il pallino").font(.headline)
                         Spacer()
                         Text("Clic su un tasto per vederlo o cambiarlo").font(.caption).foregroundColor(.secondary)
                     }
@@ -240,7 +240,7 @@ struct OtherControls: View {
             if case let .new(action)? = model.learningTarget {
                 HStack {
                     Image(systemName: "dot.radiowaves.left.and.right")
-                    Text("Premi sul Krome il controllo per \"\(action.label)\"…")
+                    Text("Premi sulla workstation il controllo per \"\(action.label)\"…")
                     Spacer()
                     Button("Annulla") { model.cancelLearn() }
                 }
@@ -274,11 +274,11 @@ struct OtherControls: View {
                     .background(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.35)))
                 }
             }
-            Text("«Brano dal Program Change»: cambiando Combi o programma sul Krome, Disableton passa al brano con lo stesso numero (001 → brano 1). Per insegnargli il canale del Krome premi Impara e poi cambia Combi.")
+            Text("«Brano dal Program Change»: cambiando Combi o programma sulla workstation, Disableton passa al brano con lo stesso numero (001 → brano 1). Per insegnargli il canale della workstation premi Impara e poi cambia Combi.")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("SW1, SW2 e il pedale non hanno comandi predefiniti. Per usarli con Disableton impostali sul Krome in modo che mandino un controller, poi usa \"Aggiungi comando\" o \"Impara\".")
+            Text("SW1, SW2 e il pedale non hanno comandi predefiniti. Per usarli con Disableton impostali sulla workstation in modo che mandino un controller, poi usa \"Aggiungi comando\" o \"Impara\".")
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -333,9 +333,9 @@ struct KeyInspector: View {
                 } label: {
                     Label("Prova: \(action.label)", systemImage: "play.circle")
                 }
-                .help("Esegue il comando come se arrivasse dal Krome")
+                .help("Esegue il comando come se arrivasse dalla workstation")
                 if model.learningTarget == .new(action) {
-                    Text("Premi un tasto o un controllo sul Krome…").foregroundColor(.orange)
+                    Text("Premi un tasto o un controllo sulla workstation…").foregroundColor(.orange)
                     Button("Annulla") { model.cancelLearn() }
                 } else {
                     Button("Impara: assegna \"\(action.label)\" al prossimo tasto premuto") {
@@ -352,7 +352,7 @@ struct KeyInspector: View {
             Text("Ultimo messaggio non associato: " + (model.snapshot?.lastUnmapped ?? "–"))
                 .font(.caption)
                 .foregroundColor(.secondary)
-                .help("Se premi un tasto del Krome e compare qui, il tasto non ha un comando (o è su un altro canale)")
+                .help("Se premi un tasto della workstation e compare qui, il tasto non ha un comando (o è su un altro canale)")
         }
         .padding(16)
         .background(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.35)))

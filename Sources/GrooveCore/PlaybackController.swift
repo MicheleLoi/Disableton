@@ -21,7 +21,7 @@ public final class PlaybackController {
     public struct Settings: Sendable {
         /// Anticipo con cui gli eventi vengono generati e inviati con timestamp futuro.
         public var lookaheadNs: UInt64 = 2_000_000
-        /// Anticipo aggiuntivo per compensare la latenza audio di EZdrummer rispetto al Krome.
+        /// Anticipo aggiuntivo per compensare la latenza audio dello strumento rispetto alla workstation.
         public var latencyCompensationNs: UInt64 = 0
         /// Se il clock si interrompe, si continua al tempo corrente per questo numero di tick.
         public var freewheelTicks: Int = Groove.ppq * 4
@@ -181,14 +181,14 @@ public final class PlaybackController {
         if reloadPending { reloadCurrentSong() }
     }
 
-    /// Il clock del Krome è arrivato da poco (trasporto avviato o no).
+    /// Il clock della workstation è arrivato da poco (trasporto avviato o no).
     public func isClockReceiving(now: UInt64) -> Bool {
         guard let last = lastClockTime else { return false }
         return now <= last || now - last < 300_000_000
     }
 
     /// Comando "Avvia": se la batteria è ferma e il clock arriva, parte subito (posizione 0
-    /// sull'impulso più vicino) con il groove di avvio del brano. Il Krome non deve mandare Start.
+    /// sull'impulso più vicino) con il groove di avvio del brano. La workstation non deve mandare Start.
     /// Se il trasporto è avviato ma la batteria tace (dopo un finale o uno stop), riparte il groove
     /// di avvio alla battuta successiva. Se sta suonando, il comando è ignorato.
     private func startFromCommand(now: UInt64) {
@@ -216,7 +216,7 @@ public final class PlaybackController {
         // Finito il Finale, la batteria si ferma davvero (riparte con «Avvia»).
         if engine.isRunning, engine.finishedEnding { stopTransport(now: now) }
         // Modifiche ai brani fatte mentre suonava: si applicano appena la batteria tace
-        // (dopo uno stop, un finale o un panic), anche se il Krome non manda Stop.
+        // (dopo uno stop, un finale o un panic), anche se la workstation non manda Stop.
         if reloadPending, engine.isSilentWhileRunning { reloadCurrentSong() }
         guard engine.isRunning,
               let lastTick = follower.lastSongTick,

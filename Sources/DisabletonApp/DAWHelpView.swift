@@ -19,7 +19,7 @@ struct DAWHelpView: View {
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    Text("Disableton sends its drum notes to a MIDI port called “\(LiveHost.virtualPortName)”. A DAW can receive them and play them with its own instruments. Timing comes from the Krome or from Disableton's internal clock: the DAW doesn't need to be synced or playing.")
+                    Text("Disableton sends its drum notes to a MIDI port called “\(LiveHost.virtualPortName)”. A DAW can receive them and play them with its own instruments. Timing comes from the workstation or from Disableton's internal clock: the DAW doesn't need to be synced or playing.")
                         .fixedSize(horizontal: false, vertical: true)
 
                     section("In Disableton", [
@@ -38,13 +38,13 @@ struct DAWHelpView: View {
                         "On the track, open the input menu (below the track name) and choose Input: MIDI → \(LiveHost.virtualPortName) → All channels.",
                         "Arm the track with its red record button and turn on input monitoring (the speaker icon next to the red button).",
                         "To avoid recording while you play: right-click the red button → “Record: disable (input monitoring only)”.",
-                        "Test: in Disableton press ▶ Prova senza Krome (play without Krome). The REAPER track shows MIDI activity and the instrument plays.",
+                        "Test: in Disableton press ▶ Prova senza workstation (play without workstation). The REAPER track shows MIDI activity and the instrument plays.",
                     ], start: 6)
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("If something doesn't work").font(.headline)
                         bullet("The instrument plays the wrong sounds (e.g. a snare instead of the kick): the kit doesn't follow the General MIDI layout. Choose a General MIDI kit; note conversion is coming.")
-                        bullet("The drums lag behind the Krome: in REAPER → Settings → Audio → Device lower “Request block size” (e.g. 128), then adjust “Anticipo batteria” (drum advance) in Disableton's settings.")
+                        bullet("The drums lag behind the workstation: in REAPER → Settings → Audio → Device lower “Request block size” (e.g. 128), then adjust “Anticipo batteria” (drum advance) in Disableton's settings.")
                         bullet("The track receives nothing: check that it's armed, with monitoring on and input “\(LiveHost.virtualPortName)”, and that Disableton's drum sound destination is the virtual port.")
                     }
                 }

@@ -2,14 +2,14 @@
 
 ## Decisioni
 
-1. **Il Krome è il master.** Invia MIDI clock (24 impulsi per quarto), Start, Stop, Continue
+1. **La workstation è il master.** Invia MIDI clock (24 impulsi per quarto), Start, Stop, Continue
    e Song Position Pointer. Disableton non ha un tempo proprio.
-2. **I groove li suona Disableton, non EZdrummer.** EZdrummer 3, aperto come applicazione
-   autonoma, non si sincronizza a un clock esterno. Riceve quindi le note già sincronizzate da
-   una porta MIDI virtuale (`Disableton`). In seguito si potrà ospitare EZdrummer 3 come plugin
-   Audio Unit, senza cambiare il nucleo.
-3. **I groove di EZdrummer 3 si esportano con il trascinamento** (file `.mid`) e vengono
-   copiati nella libreria. Non si leggono i file proprietari di Toontrack.
+2. **I groove li suona Disableton, non lo strumento di batteria.** Molti strumenti di batteria
+   aperti come applicazione autonoma non si sincronizzano a un clock esterno. Ricevono quindi le
+   note già sincronizzate da una porta MIDI virtuale (`Disableton`), oppure da una DAW che ospita
+   lo strumento come plugin.
+3. **I groove si importano come file `.mid`** e vengono copiati nella libreria. Non si leggono
+   formati proprietari.
 4. **Ardour e altri progetti open source sono stati valutati e scartati come base.** Ardour
    segue il clock esterno variando la velocità di riproduzione invece di adottarne il tempo, ci
    sono problemi segnalati con Start/Stop, e manca l'indirezione brano → groove. Si riusano
@@ -26,7 +26,7 @@ GrooveCore (nessuna dipendenza da macOS, testato anche su Linux)
   MIDIFile           lettore di Standard MIDI File (formato 0 e 1)
   Groove             groove a 960 PPQ: import, taglio delle battute vuote, lunghezza, mappa note
   ClockFollower      stima di tempo e fase dal clock (regressione su 24 impulsi), SPP, Continue
-  ClockGenerator     clock interno per ascoltare i groove senza il Krome
+  ClockGenerator     clock interno per ascoltare i groove senza la workstation
   GrooveEngine       motore musicale: loop, fill con ritorno, cambi quantizzati, note sospese
   ControlMap         comandi MIDI → azioni (predefiniti sul canale 16), MIDI Learn
   PlaybackController collega clock, comandi e motore; produce messaggi con l'istante di invio
@@ -34,7 +34,7 @@ GrooveCore (nessuna dipendenza da macOS, testato anche su Linux)
   LibraryEditing     modifiche usate dall'interfaccia (brani, slot, groove di avvio)
 
 MIDIHost (solo macOS)
-  CoreMIDIBackend    ingresso dal Krome, porta virtuale verso EZdrummer, orologio di sistema
+  CoreMIDIBackend    ingresso dalla workstation, porta virtuale verso gli strumenti, orologio di sistema
   LiveHost           motore dal vivo: thread di generazione ogni 0,5 ms, ascolto, MIDI Learn
 
 DisabletonApp (SwiftUI, macOS 12+)
@@ -75,7 +75,7 @@ L'interfaccia è volutamente sottile: tutta la logica verificabile sta in `Groov
 - Colpi suonati leggermente in anticipo sul battere (anticipi umani a fine groove): al primo
   ingresso in un groove nuovo si sente l'anticipo del groove precedente. `inspect` mostra quanti
   ce ne sono, per decidere se serve gestirli.
-- La mappa delle note tra Krome ed EZdrummer va definita sui file reali (per ora: tabella
+- La conversione delle note tra disposizioni diverse (es. kit non General MIDI) va definita sui file reali (per ora: tabella
   configurabile, nessuna conversione predefinita).
 - Ripartire da metà brano richiede che il groove giusto sia già selezionato, oppure in futuro
   un arrangiamento salvato per brano.

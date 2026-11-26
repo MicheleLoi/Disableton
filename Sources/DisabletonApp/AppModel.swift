@@ -235,13 +235,13 @@ final class AppModel: ObservableObject {
 
     // MARK: - Comandi e trasporto
 
-    /// Il Krome sta suonando e comanda la riproduzione.
+    /// La workstation sta suonando e comanda la riproduzione.
     var isKromePlaying: Bool {
         guard let snap = snapshot else { return false }
         return snap.clockReceiving && snap.status.transportRunning
     }
 
-    /// Qualcosa sta suonando (Krome, clock interno o ascolto).
+    /// Qualcosa sta suonando (workstation, clock interno o ascolto).
     var isPlaying: Bool { snapshot?.status.transportRunning == true }
 
     func perform(_ action: ControlAction) {
@@ -264,8 +264,8 @@ final class AppModel: ObservableObject {
         return snap.status.armedSlot != nil ? "Annulla avvio" : nil
     }
 
-    /// STOP: ferma ascolto o clock interno; con il Krome ferma davvero la batteria (riparte con
-    /// «Avvia» o con un nuovo Start del Krome).
+    /// STOP: ferma ascolto o clock interno; con la workstation ferma davvero la batteria (riparte con
+    /// «Avvia» o con un nuovo Start della workstation).
     func stopPlayback() {
         guard let snap = snapshot else { return }
         if snap.previewing {
@@ -287,10 +287,10 @@ final class AppModel: ObservableObject {
         perform(.triggerSlot(playing))
     }
 
-    /// Avvia il brano selezionato con il clock interno (prova senza Krome).
+    /// Avvia il brano selezionato con il clock interno (prova senza workstation).
     func startInternalClock() {
         guard !isKromePlaying else {
-            errorMessage = "Il Krome sta suonando: ferma prima il suo sequencer."
+            errorMessage = "La workstation sta suonando: ferma prima il suo sequencer."
             return
         }
         previewingGrooveID = nil
@@ -302,7 +302,7 @@ final class AppModel: ObservableObject {
         host?.stopInternalClock()
     }
 
-    /// Fa suonare uno slot del brano selezionato come se arrivasse il comando dal Krome.
+    /// Fa suonare uno slot del brano selezionato come se arrivasse il comando dalla workstation.
     /// A riproduzione ferma parte con il clock interno.
     func playSlot(_ index: Int) {
         guard let songIndex = selectedSongIndex else { return }
@@ -323,7 +323,7 @@ final class AppModel: ObservableObject {
             playSlot(i)
         case .fill, .ending, .nextSlot, .previousSlot, .stopAtBarEnd, .stopNow:
             guard isPlaying else {
-                errorMessage = "Avvia prima la riproduzione (Krome, oppure ▶ Prova senza Krome nella barra in alto)."
+                errorMessage = "Avvia prima la riproduzione (workstation, oppure ▶ Prova senza workstation nella barra in alto)."
                 return
             }
             perform(action)
@@ -334,7 +334,7 @@ final class AppModel: ObservableObject {
         case .start:
             guard !isPlaying else { return }
             guard snapshot?.clockReceiving == true else {
-                errorMessage = "«Avvia» parte al tempo del Krome, ma il clock del Krome non arriva. Per provare senza Krome usa ▶ Prova senza Krome."
+                errorMessage = "«Avvia» parte al tempo della workstation, ma il clock della workstation non arriva. Per provare senza workstation usa ▶ Prova senza workstation."
                 return
             }
             perform(action)
@@ -534,7 +534,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// File trascinati dal Finder o da EZdrummer 3.
+    /// File trascinati dal Finder o da un altro programma.
     func handleFileDrop(_ providers: [NSItemProvider]) -> Bool {
         var accepted = false
         for provider in providers {
@@ -621,7 +621,7 @@ final class AppModel: ObservableObject {
         guard let host, let original = groove(for: record) else { return }
         let groove = intensity == 1 ? original : original.scalingVelocities(by: intensity)
         guard !isKromePlaying else {
-            errorMessage = "Il Krome sta suonando: ferma prima il suo sequencer per ascoltare un groove da solo."
+            errorMessage = "La workstation sta suonando: ferma prima il suo sequencer per ascoltare un groove da solo."
             return
         }
         host.startPreview(groove: groove, bpm: previewBPM)
@@ -683,7 +683,7 @@ final class AppModel: ObservableObject {
         library.controlMap.action(for: .noteOn(channel: 15, note: UInt8(clamping: note), velocity: 100))
     }
 
-    /// Tasti imparati dalla tastiera del Krome (note su un canale diverso dal 16), per numero di nota.
+    /// Tasti imparati dalla tastiera della workstation (note su un canale diverso dal 16), per numero di nota.
     func learnedNoteBindings() -> [Int: ControlBinding] {
         var result: [Int: ControlBinding] = [:]
         for b in library.controlMap.bindings where b.kind == .note && b.channel != 16 {

@@ -64,7 +64,7 @@ struct GrooveHelpView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Good to know").font(.headline)
-                        bullet("The Fill command (from the Krome) plays the first fill of the song. Other fills are triggered with their own position key (1, 2, 3…), like any groove.")
+                        bullet("The Fill command (from the workstation) plays the first fill of the song. Other fills are triggered with their own position key (1, 2, 3…), like any groove.")
                         bullet("After a fill, the groove starts again from its beginning.")
                         bullet("A fill must end on a bar line. One-bar fills work best, including those that start with the groove and end with the actual fill.")
                         bullet("Disableton measures a groove in whole bars, up to the last bar that contains a note. Empty bars at the beginning are skipped.")

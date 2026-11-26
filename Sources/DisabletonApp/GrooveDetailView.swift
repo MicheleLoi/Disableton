@@ -65,7 +65,7 @@ struct GrooveDetailView: View {
                         }
                         .padding(4)
                     } label: {
-                        Text("Ascolto (senza Krome)")
+                        Text("Ascolto (senza workstation)")
                     }
 
                     GroupBox {

@@ -1,4 +1,4 @@
-# Prova senza Krome e senza EZdrummer
+# Prova senza workstation e senza strumenti esterni
 
 Circa 15 minuti. Se un passo non va come descritto, annota il numero del passo e cosa è successo,
 poi continua (o fermati, se il problema impedisce i passi successivi).
@@ -45,7 +45,7 @@ e scompattalo: ottieni la cartella *Groove di prova*.
 ## C. Suono e tempo (requisiti 7, 8, 12)
 
 8. Impostazioni → Suono della batteria → **Sintetizzatore integrato di macOS** → Fine (o Esc).
-9. Clicca "Prova rock" in scaletta, poi **▶ Prova senza Krome** nella barra nera (o ⌘R).
+9. Clicca "Prova rock" in scaletta, poi **▶ Prova senza workstation** nella barra nera (o ⌘R).
    → Barra nera: "Clock interno", battuta e 4 pallini che avanzano; suona *Rock strofa* (scheda verde).
 10. Sulla scheda di *Rock ritornello* premi **▶ Suona** (oppure clic destro → **Fai partire questo
     groove**).

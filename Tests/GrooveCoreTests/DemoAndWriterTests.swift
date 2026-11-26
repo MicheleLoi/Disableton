@@ -49,8 +49,11 @@ final class DemoAndWriterTests: XCTestCase {
     func testOldSettingsDecodeWithDefaults() throws {
         let json = #"{"inputFilter":"KROME","latencyMs":3}"#
         let s = try JSONDecoder().decode(PerformanceSettings.self, from: Data(json.utf8))
-        XCTAssertEqual(s.soundOutput, .ezdrummer)
-        XCTAssertEqual(s.destinationFilter, "KROME")
+        XCTAssertEqual(s.soundOutput, .virtualPort)
+        XCTAssertNil(s.destinationFilter)
         XCTAssertEqual(s.internalBPM, 120)
+        // Valore della porta virtuale salvato dalle versioni precedenti.
+        let legacy = try JSONDecoder().decode(PerformanceSettings.self, from: Data(#"{"soundOutput":"ezdrummer"}"#.utf8))
+        XCTAssertEqual(legacy.soundOutput, .virtualPort)
     }
 }

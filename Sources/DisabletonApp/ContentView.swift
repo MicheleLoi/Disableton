@@ -212,7 +212,7 @@ struct StatusBar: View {
         }
     }
 
-    /// STOP quando qualcosa suona; "Prova senza Krome" quando tutto è fermo.
+    /// STOP quando qualcosa suona; "Prova senza workstation" quando tutto è fermo.
     @ViewBuilder
     private var transportButton: some View {
         if let label = model.stopLabel {
@@ -229,7 +229,7 @@ struct StatusBar: View {
             .help("Ferma (⌘.)")
         } else if model.snapshot?.status.transportRunning != true {
             Button { model.startInternalClock() } label: {
-                Label("Prova senza Krome", systemImage: "play.fill")
+                Label("Prova senza workstation", systemImage: "play.fill")
                     .font(.callout.weight(.semibold))
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)
@@ -247,7 +247,7 @@ struct StatusBar: View {
         HStack(spacing: 10) {
             if model.learningTarget != nil {
                 Image(systemName: "dot.radiowaves.left.and.right")
-                Text("MIDI Learn: premi un tasto o un controllo sul Krome…")
+                Text("MIDI Learn: premi un tasto o un controllo sulla workstation…")
                 Button("Annulla") { model.cancelLearn() }
             } else if let notice = model.notice {
                 Image(systemName: "info.circle")
@@ -272,7 +272,7 @@ struct StatusBar: View {
         guard let snap else { return "Avvio…" }
         if snap.previewing { return "Ascolto" }
         if snap.internalClock { return "Clock interno" }
-        return snap.clockReceiving ? "Clock Krome" : "In attesa del clock"
+        return snap.clockReceiving ? "Clock workstation" : "In attesa del clock"
     }
 
     private func barText(_ snap: LiveSnapshot?) -> String {

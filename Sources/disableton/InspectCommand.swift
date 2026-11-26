@@ -49,7 +49,7 @@ func runInspect(_ argv: [String]) throws {
     }
 
     print("")
-    print("Note usate (nomi General MIDI, solo indicativi per EZdrummer):")
+    print("Note usate (nomi General MIDI, solo indicativi):")
     for (note, count) in groove.noteHistogram.sorted(by: { $0.key < $1.key }) {
         let name = DrumNames.gm(note) ?? "-"
         print("  " + pad(String(note), 3, left: true) + "  " + pad(NoteName.korg(note), 5) + " " + pad(name, 20) + " " + pad(String(count), 5, left: true) + " colpi")

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Azione eseguibile da un comando MIDI del Krome.
+/// Azione eseguibile da un comando MIDI della workstation.
 /// In JSON è una stringa, con numeri 1-based: "triggerSlot:1", "selectSong:3", "fill", ...
 public enum ControlAction: Hashable, Sendable, Codable, CustomStringConvertible {
     /// Brano (0-based).
@@ -17,10 +17,10 @@ public enum ControlAction: Hashable, Sendable, Codable, CustomStringConvertible 
     case nextSlot
     case previousSlot
     case stopAtBarEnd
-    /// Stop vero: la batteria si ferma subito e riparte solo con «Avvia» (o con lo Start del Krome).
+    /// Stop vero: la batteria si ferma subito e riparte solo con «Avvia» (o con lo Start della workstation).
     case stopNow
     case panic
-    /// Fa partire la batteria al tempo del clock del Krome, senza messaggio Start (es. in Combi).
+    /// Fa partire la batteria al tempo del clock della workstation, senza messaggio Start (es. in Combi).
     /// Ignorato se la batteria sta già suonando.
     case start
     /// Intensità della batteria dal vivo, comandata in continuo da un controller (manopola):

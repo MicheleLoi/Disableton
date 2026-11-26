@@ -62,7 +62,7 @@ func runMonitor(_ argv: [String]) throws {
     }
 }
 
-/// `disableton play`: segue il clock del Krome e suona i groove sulla porta virtuale "Disableton".
+/// `disableton play`: segue il clock della workstation e suona i groove sulla porta virtuale "Disableton".
 ///
 ///     disableton play --loop strofa.mid --loop ritornello.mid --fill fill.mid [--meter 4/4]
 ///     disableton play --library [--dir cartella] [--song 1]
@@ -109,10 +109,10 @@ func runPlay(_ argv: [String]) throws {
 
     switch args.value("sound") {
     case nil: break
-    case "ezdrummer": performance.soundOutput = .ezdrummer
+    case "virtual": performance.soundOutput = .virtualPort
     case "synth": performance.soundOutput = .builtInSynth
-    case "krome": performance.soundOutput = .midiDestination
-    case let other?: throw CLIError("--sound non valido: \(other) (ammessi: ezdrummer, synth, krome)")
+    case "midi": performance.soundOutput = .midiDestination
+    case let other?: throw CLIError("--sound non valido: \(other) (ammessi: virtual, synth, midi)")
     }
     if let dest = args.value("dest") { performance.destinationFilter = dest }
 
@@ -132,7 +132,7 @@ func runPlay(_ argv: [String]) throws {
         let note = 36 + i
         print("  \(i + 1). \(slot.name) [\(slot.mode.rawValue)] — nota \(note) (\(NoteName.korg(UInt8(note)))) sul canale 16")
     }
-    print("Avvia il sequencer del Krome. Ctrl-C per uscire.\n")
+    print("Avvia il sequencer della workstation. Ctrl-C per uscire.\n")
 
     // Riga di stato a ogni cambio e a ogni battuta.
     var lastStatus: PlaybackStatus?

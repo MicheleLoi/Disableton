@@ -40,7 +40,7 @@ public struct EngineSong: Sendable {
     public var name: String
     public var timeSignature: TimeSignature
     public var slots: [EngineSlot]
-    /// Slot avviato automaticamente allo Start del Krome (nil = attende un comando).
+    /// Slot avviato automaticamente allo Start della workstation (nil = attende un comando).
     public var autoStartSlot: Int?
 
     public init(name: String, timeSignature: TimeSignature = .fourFour, slots: [EngineSlot], autoStartSlot: Int? = 0) {
@@ -171,7 +171,7 @@ public final class GrooveEngine {
     public func triggerNextSlot() { stepLoopSlot(by: 1) }
     public func triggerPreviousSlot() { stepLoopSlot(by: -1) }
 
-    /// Silenzio dalla battuta successiva (il trasporto del Krome continua).
+    /// Silenzio dalla battuta successiva (il trasporto della workstation continua).
     public func stopAtNextBar() {
         guard isRunning else { armedSlot = nil; return }
         pending = Pending(slotIndex: nil, boundary: boundary(for: .bar))
@@ -221,7 +221,7 @@ public final class GrooveEngine {
     public func panic() -> [MIDIMessage] { silenceMessages() }
 
     /// Silenzio immediato: ferma il groove in corso e svuota la coda, senza fermare il trasporto
-    /// (il Krome continua a mandare il clock; un nuovo comando fa ripartire un groove).
+    /// (la workstation continua a mandare il clock; un nuovo comando fa ripartire un groove).
     public func silenceNow() -> [MIDIMessage] {
         segment = nil
         pending = nil

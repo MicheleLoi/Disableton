@@ -67,11 +67,11 @@ extension AppModel {
             log.log("Brano corrente: \(n.songIndex.map { "\($0 + 1)" } ?? "nessuno")")
         }
         if o?.transportRunning != n.transportRunning {
-            let source = new.previewing ? "ascolto" : (new.internalClock ? "clock interno" : "Krome")
+            let source = new.previewing ? "ascolto" : (new.internalClock ? "clock interno" : "workstation")
             log.log(n.transportRunning ? "Start (\(source))" : "Stop")
         }
         if old?.clockReceiving != new.clockReceiving {
-            log.log(new.clockReceiving ? "Clock dal Krome ricevuto" : "Clock dal Krome assente")
+            log.log(new.clockReceiving ? "Clock dalla workstation ricevuto" : "Clock dalla workstation assente")
         }
         if o?.playingSlot != n.playingSlot {
             log.log("Suona: \(n.playingSlot.map { "slot \($0 + 1)" } ?? "silenzio")"
@@ -113,7 +113,7 @@ extension AppModel {
         if let snap {
             let st = snap.status
             report.add("Stato", [
-                "Trasporto: \(st.transportRunning ? "in corso" : "fermo") · clock Krome: \(snap.clockReceiving ? "sì" : "no") · clock interno: \(snap.internalClock ? "sì" : "no")",
+                "Trasporto: \(st.transportRunning ? "in corso" : "fermo") · clock workstation: \(snap.clockReceiving ? "sì" : "no") · clock interno: \(snap.internalClock ? "sì" : "no")",
                 "Brano: \(st.songIndex.map { "\($0 + 1)" } ?? "-") · slot: \(st.playingSlot.map { "\($0 + 1)" } ?? "-") · in coda: \(st.pendingSlot.map { "\($0 + 1)" } ?? "-")",
                 "Battuta: \(snap.bar.map(String.init) ?? "-") · tempo: \(snap.tempoBPM.map { String(format: "%.1f", $0) } ?? "-") BPM",
                 "Ultimo comando: \(snap.lastCommand ?? "-")",
@@ -194,7 +194,7 @@ extension AppModel {
     func installUpdate() {
         guard case let .available(release) = updateState else { return }
         if snapshot?.status.transportRunning == true {
-            errorMessage = "Ferma prima il Krome (o il clock interno): l'aggiornamento riavvia l'app."
+            errorMessage = "Ferma prima la workstation (o il clock interno): l'aggiornamento riavvia l'app."
             return
         }
         guard Updater.canSelfInstall else {
