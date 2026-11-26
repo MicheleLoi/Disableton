@@ -39,12 +39,12 @@ Le scelte di progetto sono descritte in [docs/ARCHITETTURA.md](docs/ARCHITETTURA
 | Parte | Stato |
 |---|---|
 | Nucleo (`GrooveCore`): file MIDI, groove, clock, motore groove/fill, comandi, libreria, modifica della libreria, MIDI Learn, clock interno per l'ascolto | compila; 75 test superati |
-| Livello MIDI di macOS (`MIDIHost`): ingresso dalla workstation, porta virtuale, thread di generazione | verificato in compilazione su GitHub (macOS); **da provare con la workstation** |
-| App (`DisabletonApp`, SwiftUI): Preparazione, Comandi, Palco, Impostazioni | compilata e avviata su GitHub (con schermate); **da provare sul Mac** |
+| Livello MIDI di macOS (`MIDIHost`): ingresso dalla workstation, porta virtuale, thread di generazione | **provato dal vivo** con un Korg Krome via USB: clock, Start/Stop, comandi da tasti, manopole, joystick e pedale |
+| App (`DisabletonApp`, SwiftUI): Preparazione, Comandi, Palco, Impostazioni | **provata su un MacBook Pro Intel con macOS 12 Monterey**; suono verificato con REAPER (SSD 5.5 Free), Analog Lab V e il kit di batteria della workstation |
 | Catena MIDI completa (workstation simulata → Disableton → strumento simulato) | verificata su GitHub a 120 e 87 BPM: note e tempi corretti |
 | Riga di comando (`disableton`): `inspect`, `ports`, `monitor`, `play`, `library` | come sopra |
 
-Ogni modifica pubblicata viene verificata automaticamente su un Mac di GitHub (vedi
+Oltre alle prove dal vivo, ogni modifica pubblicata viene verificata automaticamente su un Mac di GitHub (vedi
 `.github/workflows/macos.yml`), in ordine: nucleo → MIDI → riga di comando → app → test →
 app universale. Il primo passo che fallisce ferma i successivi.
 
@@ -130,7 +130,7 @@ scripts/build-app.sh        # crea dist/Disableton.app universale
 Il programma a riga di comando si trova in `.build/release/disableton` (o in `dist/`). Negli
 esempi seguenti è abbreviato in `disableton`.
 
-## Fase 0: verifiche con la workstation
+## Verifiche tecniche con la workstation (riga di comando, per sviluppatori)
 
 ### 1. Clock e trasporto
 
