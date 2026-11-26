@@ -271,6 +271,10 @@ struct OtherControls: View {
                     .background(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.35)))
                 }
             }
+            Text("«Brano dal Program Change»: cambiando Combi o programma sul Krome, Disableton passa al brano con lo stesso numero (001 → brano 1). Per insegnargli il canale del Krome premi Impara e poi cambia Combi.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             Text("SW1, SW2 e il pedale non hanno comandi predefiniti. Per usarli con Disableton impostali sul Krome in modo che mandino un controller, poi usa \"Aggiungi comando\" o \"Impara\".")
                 .font(.caption)
                 .foregroundColor(.secondary)
