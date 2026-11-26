@@ -44,7 +44,7 @@ final class AppModel: ObservableObject {
     @Published var selectedSlotID: UUID? {
         didSet { if selectedSlotID != oldValue, learningTarget != nil { cancelLearn() } }
     }
-    @Published var selectedKey: Int? = 38
+    @Published var selectedKey: Int? = 24
     @Published var detailGrooveID: UUID?
     @Published var confirmDeleteSong = false
     @Published var showDAWHelp = false

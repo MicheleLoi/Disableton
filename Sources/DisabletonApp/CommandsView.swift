@@ -2,7 +2,7 @@
 import GrooveCore
 import SwiftUI
 
-/// Comandi: la zona di controllo del Krome disegnata come tastiera (C2–B3, canale 16),
+/// Comandi: la zona di controllo del Krome disegnata come tastiera (C1–B2, canale 16),
 /// gli altri controlli (SW1, SW2, pedale, Program Change) e il MIDI Learn.
 struct CommandsView: View {
     @EnvironmentObject var model: AppModel
@@ -44,11 +44,11 @@ enum KeyState {
 struct KromeKeyboard: View {
     @EnvironmentObject var model: AppModel
 
-    /// C2–B3, allargata a ottave intere per includere i tasti imparati.
+    /// C1–B2 (comandi e loop predefiniti), allargata a ottave intere per includere i tasti imparati.
     private var notes: [Int] {
         let learned = model.learnedNoteBindings().keys
-        let low = min(36, (learned.min() ?? 36) / 12 * 12)
-        let high = max(59, (learned.max() ?? 59) / 12 * 12 + 11)
+        let low = min(24, (learned.min() ?? 24) / 12 * 12)
+        let high = max(47, (learned.max() ?? 47) / 12 * 12 + 11)
         return Array(low...min(127, high))
     }
 
@@ -283,7 +283,7 @@ struct KeyInspector: View {
     @EnvironmentObject var model: AppModel
 
     var body: some View {
-        let note = model.selectedKey ?? 36
+        let note = model.selectedKey ?? 24
         let action = model.action(forNote: note)
         let learned = model.learnedNoteBindings()[note]
         VStack(alignment: .leading, spacing: 12) {

@@ -64,7 +64,7 @@ Tre viste, scelte in alto (**Preparazione · Comandi · Palco**), più le **Impo
   ascolto) e il pannello dello slot selezionato: groove, comportamento (ripetuto, fill con
   ritorno, una volta poi il successivo, finale), momento del cambio, groove di avvio, tasto del
   Krome con **Impara**. I groove si aggiungono trascinandoli dalla libreria o con il "+".
-- **Comandi**: la zona C2–B3 del Krome disegnata come tastiera, con lo stato di ogni tasto
+- **Comandi**: la zona C1–B2 del Krome disegnata come tastiera, con lo stato di ogni tasto
   (suona, in coda, groove del brano, comando); clic su un tasto per cambiarne l'azione o
   reimpararlo; gli altri controlli (SW1, SW2, pedale, Program Change).
 - **Palco**: schermata scura leggibile a 2–3 metri: brano, groove che suona, prossimo groove,
@@ -127,7 +127,7 @@ impulsi.
 ### 2. Comandi dal Krome
 
 In un brano del Krome imposta una traccia come esterna (**EXT** o **BTH**) sul **canale 16** e
-registra alcune note tra C2 e C3. Con `monitor` attivo devono arrivare dei `NoteOn ch16`.
+registra alcune note tra C1 e B2. Con `monitor` attivo devono arrivare dei `NoteOn ch16`.
 Prova anche SW1/SW2 e il pedale, se li hai assegnati a controller (CC80/81/82).
 
 ### 3. Groove esportati da EZdrummer 3
@@ -153,13 +153,13 @@ Avvia il sequencer del Krome: il primo groove parte sul primo battere. Con note 
 
 | Nota (Korg) | Numero | Azione |
 |---|---|---|
-| C2, C#2, D2… | 36, 37, 38… | slot 1, 2, 3… (cambio alla battuta successiva) |
-| C3 | 48 | fill, poi ritorno al groove precedente |
-| D3 | 50 | groove successivo |
-| E3 | 52 | silenzio dalla battuta successiva |
-| F3 | 53 | avvia: la batteria parte al tempo del Krome anche senza Start (es. in Combi); ignorato se sta già suonando |
-| B3 | 59 | panic (spegne tutte le note) |
-| C#3 / D#3 | 49 / 51 | brano precedente / successivo |
+| C1 | 24 | avvia: la batteria parte al tempo del Krome anche senza Start (es. in Combi); ignorato se sta già suonando |
+| C#1 / D#1 | 25 / 27 | brano precedente / successivo |
+| D1 | 26 | fill, poi ritorno al groove precedente |
+| E1 / F1 | 28 / 29 | groove successivo / precedente |
+| G1 | 31 | panic (spegne tutte le note) |
+| B1 | 35 | silenzio dalla battuta successiva |
+| C2, C#2, D2… B2 | 36, 37, 38… 47 | slot 1, 2, 3… 12 (cambio alla battuta successiva) |
 | Program Change n | – | brano n+1 |
 | CC80 (SW1), CC82 (pedale) | – | fill |
 | CC81 (SW2) | – | groove successivo |

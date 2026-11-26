@@ -111,7 +111,11 @@ final class ControlMapTests: XCTestCase {
         let map = ControlMap.default
         XCTAssertEqual(map.action(for: .noteOn(channel: 15, note: 36, velocity: 100)), .triggerSlot(0))
         XCTAssertEqual(map.action(for: .noteOn(channel: 15, note: 38, velocity: 1)), .triggerSlot(2))
-        XCTAssertEqual(map.action(for: .noteOn(channel: 15, note: 48, velocity: 100)), .fill)
+        XCTAssertEqual(map.action(for: .noteOn(channel: 15, note: 26, velocity: 100)), .fill)
+        XCTAssertEqual(map.action(for: .noteOn(channel: 15, note: 24, velocity: 100)), .start)
+        XCTAssertEqual(map.action(for: .noteOn(channel: 15, note: 35, velocity: 100)), .stopAtBarEnd)
+        XCTAssertEqual(map.action(for: .noteOn(channel: 15, note: 28, velocity: 100)), .nextSlot)
+        XCTAssertNil(map.action(for: .noteOn(channel: 15, note: 48, velocity: 100)))
         XCTAssertEqual(map.action(for: .programChange(channel: 15, program: 5)), .selectSong(5))
         XCTAssertEqual(map.action(for: .controlChange(channel: 15, controller: 82, value: 127)), .fill)
         XCTAssertNil(map.action(for: .controlChange(channel: 15, controller: 82, value: 0)))
@@ -196,12 +200,12 @@ final class PlaybackControllerTests: XCTestCase {
         // Comando poco dopo l'ultimo impulso ricevuto (47): la posizione 0 è quell'impulso.
         let last = t0 + 47 * clock120
         let press = last + clock120 / 4
-        controller.handle(.noteOn(channel: 15, note: 53, velocity: 100), at: press, now: press)
+        controller.handle(.noteOn(channel: 15, note: 24, velocity: 100), at: press, now: press)
         XCTAssertTrue(controller.engine.isRunning)
         for i in 48..<80 {
             let t = t0 + UInt64(i) * clock120
             controller.handle(.timingClock, at: t, now: t)
-            if i == 60 { controller.handle(.noteOn(channel: 15, note: 53, velocity: 100), at: t, now: t) }
+            if i == 60 { controller.handle(.noteOn(channel: 15, note: 24, velocity: 100), at: t, now: t) }
         }
         let notes = sent.filter { if case .noteOn = $0.0 { return true }; return false }
         XCTAssertEqual(notes.map { $0.0 }, [.noteOn(channel: 9, note: 36, velocity: 100), .noteOn(channel: 9, note: 38, velocity: 100)])
@@ -271,6 +275,6 @@ final class PlaybackControllerTests: XCTestCase {
     func testStartActionRoundTrip() {
         XCTAssertEqual(ControlAction(string: "start"), .start)
         XCTAssertEqual(ControlAction.start.description, "start")
-        XCTAssertEqual(ControlMap.default.action(for: .noteOn(channel: 15, note: 53, velocity: 100)), .start)
+        XCTAssertEqual(ControlMap.default.action(for: .noteOn(channel: 15, note: 24, velocity: 100)), .start)
     }
 }
