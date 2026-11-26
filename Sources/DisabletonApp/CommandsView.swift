@@ -16,7 +16,7 @@ struct CommandsView: View {
                         Spacer()
                         Text("Clic su un tasto per vederlo o cambiarlo").font(.caption).foregroundColor(.secondary)
                     }
-                    Text("I tasti predefiniti rispondono al canale 16: in SEQ seleziona con Track Select una traccia sul canale 16 (es. Track16). Per tutto il resto usa Impara.")
+                    Text("I tasti predefiniti (loop su C1–B1, comandi su C2–B2) rispondono al canale 16: in SEQ seleziona con Track Select una traccia sul canale 16 (es. Track16). Per tutto il resto usa Impara.")
                         .font(.callout)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
