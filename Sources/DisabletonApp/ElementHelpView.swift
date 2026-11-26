@@ -6,7 +6,7 @@ import SwiftUI
 /// Guida: Element, un programma gratuito che apre strumenti plugin senza una DAW.
 struct ElementHelpView: View {
     @Environment(\.dismiss) private var dismiss
-    private let downloadURL = URL(string: "https://kushview.net/element/")!
+    private let downloadURL = URL(string: "https://github.com/kushview/element/releases/tag/1.1.1")!
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -34,8 +34,8 @@ struct ElementHelpView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Download").font(.headline)
-                        Button("Element website (kushview.net)") { NSWorkspace.shared.open(downloadURL) }
-                        Text("Choose the macOS version; the website may ask for an email address. You get a .dmg file: open it and drag Element into Applications (there's no installer). The first time, right-click Element → Open. Don't confuse it with the chat app also called “Element”. Before relying on it, check that it opens on your Mac.")
+                        Button("Element 1.1.1 on GitHub") { NSWorkspace.shared.open(downloadURL) }
+                        Text("On that page, scroll down to Assets and download the macOS file (not “Source code”, which is for developers). Move Element into Applications (there's no installer); the first time, right-click Element → Open. Don't confuse it with the chat app also called “Element”.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
