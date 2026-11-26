@@ -271,7 +271,7 @@ struct OtherControls: View {
                     .background(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.35)))
                 }
             }
-            Text("SW1, SW2 e il pedale del Krome vanno impostati in modo da inviare un controller (es. CC 80, 81, 82); poi usa \"Impara\".")
+            Text("SW1, SW2 e il pedale non hanno comandi predefiniti. Per usarli con Disableton impostali sul Krome in modo che mandino un controller, poi usa \"Aggiungi comando\" o \"Impara\".")
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
