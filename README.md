@@ -13,7 +13,7 @@ Le scelte di progetto sono descritte in [docs/ARCHITETTURA.md](docs/ARCHITETTURA
 
 | Parte | Stato |
 |---|---|
-| Nucleo (`GrooveCore`): file MIDI, groove, clock, motore groove/fill, comandi, libreria, modifica della libreria, MIDI Learn, clock interno per l'ascolto | compila; 53 test superati |
+| Nucleo (`GrooveCore`): file MIDI, groove, clock, motore groove/fill, comandi, libreria, modifica della libreria, MIDI Learn, clock interno per l'ascolto | compila; 69 test superati |
 | Livello MIDI di macOS (`MIDIHost`): ingresso dal Krome, porta virtuale, thread di generazione | verificato in compilazione su GitHub (macOS); **da provare con il Krome** |
 | App (`DisabletonApp`, SwiftUI): Preparazione, Comandi, Palco, Impostazioni | compilata e avviata su GitHub (con schermate); **da provare sul Mac** |
 | Catena MIDI completa (Krome simulato → Disableton → EZdrummer simulato) | verificata su GitHub a 120 e 87 BPM: note e tempi corretti |
