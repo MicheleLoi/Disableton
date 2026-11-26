@@ -16,6 +16,10 @@ struct CommandsView: View {
                         Spacer()
                         Text("Clic su un tasto per vederlo o cambiarlo").font(.caption).foregroundColor(.secondary)
                     }
+                    Text("I tasti predefiniti rispondono al canale 16: in SEQ seleziona con Track Select una traccia sul canale 16 (es. Track16). Per tutto il resto usa Impara.")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                     KromeKeyboard()
                         .frame(height: 230)
                     KeyLegend()
