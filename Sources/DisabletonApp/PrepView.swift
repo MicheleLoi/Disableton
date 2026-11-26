@@ -224,12 +224,12 @@ struct SlotCard: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            Button {
-                model.selectedSlotID = slot.id
-            } label: {
-                cardContent
-            }
-            .buttonStyle(.plain)
+            // Non un Button: su macOS un pulsante trattiene il clic e impedisce il trascinamento.
+            cardContent
+                .contentShape(Rectangle())
+                .onTapGesture { model.selectedSlotID = slot.id }
+                .accessibilityAddTraits(.isButton)
+                .accessibilityAction { model.selectedSlotID = slot.id }
             Button { model.removeSlot(id: slot.id) } label: {
                 Image(systemName: "xmark.circle.fill").foregroundColor(.secondary)
             }
