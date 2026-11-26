@@ -115,6 +115,9 @@ struct SettingsView: View {
                 .frame(maxWidth: 420)
                 Text("Lo strumento deve suonare la batteria sul canale scelto qui sotto (es. sul Krome una traccia con un kit di batteria).")
                     .font(.caption).foregroundColor(.secondary)
+                Label("Attenzione: con questa uscita il pedale damper collegato al Krome (o a un altro strumento) può smettere di agire sui suoni dello strumento stesso. Se succede, usa la porta virtuale «\(LiveHost.virtualPortName)».", systemImage: "exclamationmark.triangle")
+                    .font(.caption).foregroundColor(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             if model.library.performance.soundOutput == .ezdrummer {
                 Text("Nello strumento software (es. EZdrummer 3: Settings → MIDI) abilita l'ingresso “\(LiveHost.virtualPortName)”.")
