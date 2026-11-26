@@ -7,7 +7,6 @@ import SwiftUI
 struct ElementHelpView: View {
     @Environment(\.dismiss) private var dismiss
     private let downloadURL = URL(string: "https://kushview.net/element/")!
-    private let githubURL = URL(string: "https://github.com/kushview/element/releases")!
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -35,11 +34,8 @@ struct ElementHelpView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Download").font(.headline)
-                        HStack(spacing: 12) {
-                            Button("Element website (kushview.net)") { NSWorkspace.shared.open(downloadURL) }
-                            Button("Releases on GitHub") { NSWorkspace.shared.open(githubURL) }
-                        }
-                        Text("The website may ask for an email address before downloading; GitHub downloads directly. Before relying on it, check that the version you downloaded opens on your Mac.")
+                        Button("Element website (kushview.net)") { NSWorkspace.shared.open(downloadURL) }
+                        Text("Choose the macOS version; the website may ask for an email address. You get a .dmg file: open it and drag Element into Applications (there's no installer). The first time, right-click Element → Open. Don't confuse it with the chat app also called “Element”. Before relying on it, check that it opens on your Mac.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
