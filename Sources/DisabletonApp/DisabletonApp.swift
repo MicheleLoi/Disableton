@@ -48,7 +48,8 @@ struct DisabletonApp: App {
                 Button("Panic (silenzio immediato)") { model.panic() }
                     .keyboardShortcut(".", modifiers: [.command, .shift])
             }
-            CommandMenu("Vista") {
+            // Nel menu Vista di sistema (in italiano), invece di un secondo menu «Vista».
+            CommandGroup(before: .toolbar) {
                 Button("Preparazione") { model.mode = .prep }.keyboardShortcut("1")
                 Button("Comandi") { model.mode = .commands }.keyboardShortcut("2")
                 Button("Palco") { model.mode = .stage }.keyboardShortcut("3")

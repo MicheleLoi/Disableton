@@ -14,7 +14,9 @@ BIN_DIR="$(swift build -c release "${ARCHS[@]}" --show-bin-path)"
 
 APP=dist/Disableton.app
 rm -rf dist
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources/it.lproj"
+# Unica lingua dell'app: italiano (anche i menu di sistema: Archivio, Composizione, Vista, Finestra, Aiuto).
+printf '"CFBundleName" = "Disableton";\n' > "$APP/Contents/Resources/it.lproj/InfoPlist.strings"
 cp "$BIN_DIR/DisabletonApp" "$APP/Contents/MacOS/Disableton"
 cp "$BIN_DIR/disableton" dist/disableton
 
@@ -28,6 +30,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundleIdentifier</key><string>app.disableton.Disableton</string>
     <key>CFBundleExecutable</key><string>Disableton</string>
     <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleDevelopmentRegion</key><string>it</string>
+    <key>CFBundleLocalizations</key><array><string>it</string></array>
     <key>CFBundleShortVersionString</key><string>${VERSION}</string>
     <key>CFBundleVersion</key><string>${BUILD}</string>
     <key>LSMinimumSystemVersion</key><string>12.0</string>
