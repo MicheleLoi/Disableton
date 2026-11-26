@@ -8,6 +8,18 @@ pubblicati finché non vengono completate e unite al ramo principale.
 - **Mappa delle note** per strumenti che non seguono la disposizione General MIDI (convertire una
   nota in un'altra o non suonarla), scelta per destinazione del suono.
 
+## Impostazione
+
+Splitter e più strumenti hanno lo stesso nucleo: **ogni evento del groove porta il suo canale**
+(oggi il canale non viene memorizzato e tutto esce su un solo canale), e lo spegnimento delle note
+(cambi, stop, panic) avviene su tutti i canali usati. Ordine di lavoro previsto:
+
+1. **Nucleo comune:** canale per evento, mantenuto dal file MIDI (anche file con più tracce),
+   più una **riassegnazione** facoltativa: nota → canale (lo splitter della batteria) oppure
+   canale → canale. Questo da solo dà lo splitter e i file con più strumenti che cambiano insieme.
+2. **Parti indipendenti** (solo se servono davvero): parti con lunghezze diverse, comandi per
+   parte (es. fill solo sulla batteria mentre il basso continua), trasposizione delle parti melodiche.
+
 ## Da fare
 
 1. **Splitter: un suono per canale.** Mandare ogni pezzo della batteria (cassa, rullante,
