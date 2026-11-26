@@ -29,7 +29,7 @@ struct DAWHelpView: View {
 
                     section("In REAPER, una volta sola", [
                         "Apri REAPER → Settings… (⌘,) → Audio → MIDI Inputs (nelle versioni meno recenti si chiama MIDI Devices).",
-                        "Nell'elenco trova la riga «\(LiveHost.virtualPortName)»: clic destro e scegli la voce che abilita l'ingresso per tracce e registrazione (in inglese «Enable input for track recording/monitoring»), oppure clicca nella colonna Input di quella riga. La riga deve risultare attiva; poi Apply e OK.",
+                        "Nell'elenco fai clic destro sulla riga «\(LiveHost.virtualPortName)» e scegli «Enable input for track record input». Poi Apply e OK. Le altre voci del menu non servono.",
                         "Se «\(LiveHost.virtualPortName)» non è nell'elenco, REAPER è stato aperto prima di Disableton: premi «Reset all MIDI devices» nella stessa pagina, oppure chiudi e riapri REAPER con Disableton già aperto.",
                     ], start: 3)
 
