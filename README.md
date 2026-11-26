@@ -161,8 +161,7 @@ Avvia il sequencer del Krome: il primo groove parte sul primo battere. Con note 
 | F2 | 41 | panic (spegne tutte le note) |
 | F#2 / G#2 | 42 / 44 | brano precedente / successivo |
 | Program Change n | – | brano n+1 |
-| CC80 (SW1), CC82 (pedale) | – | fill |
-| CC81 (SW2) | – | groove successivo |
+| SW1, SW2, pedale | – | nessun comando predefinito: si assegnano con **Impara** |
 
 Lascialo suonare per almeno 10 minuti, cambiando tempo, fermando e ripartendo, anche da metà
 brano.

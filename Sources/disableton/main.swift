@@ -34,10 +34,11 @@ Uso:
       add-song "Nome" [--meter 3/4]
       assign <n. brano> <nome groove> [--mode loop|fill|next|ending] [--quantize beat|bar|end]
 
-Comandi predefiniti dal Krome (canale 16, nomi Korg: 36 = C2):
-  Program Change n → brano n+1   note 36…47 → slot 1…12   48 fill   50 groove successivo
-  49/51 brano precedente/successivo   52 silenzio a fine battuta   59 panic
-  CC80 (SW1) fill   CC81 (SW2) groove successivo   CC82 (pedale) fill
+Comandi predefiniti dal Krome (canale 16, nomi Korg: 24 = C1, 36 = C2):
+  Program Change n → brano n+1   note 24…35 (C1…B1) → slot 1…12
+  36 avvia   37/39 groove precedente/successivo   38 fill   40 silenzio a fine battuta
+  41 panic   42/44 brano precedente/successivo
+  SW1, SW2 e pedale: nessun comando predefinito (si assegnano con Impara)
 """
 
 let arguments = Array(CommandLine.arguments.dropFirst())

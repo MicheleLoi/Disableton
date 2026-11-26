@@ -145,7 +145,7 @@ public struct ControlMap: Codable, Equatable, Sendable {
     /// - ottava dei comandi, da C2: 36 (C2) avvia, 37 (C#2) groove precedente, 38 (D2) fill,
     ///   39 (D#2) groove successivo, 40 (E2) silenzio a fine battuta, 41 (F2) panic,
     ///   42 (F#2) brano precedente, 44 (G#2) brano successivo
-    /// - CC 80 (SW1) fill, CC 81 (SW2) groove successivo, CC 82 (pedale) fill
+    /// - nessun controller predefinito: SW1, SW2 e pedale restano liberi (si assegnano con Impara)
     public static let `default`: ControlMap = {
         let ch = 16
         var b: [ControlBinding] = [
@@ -163,9 +163,6 @@ public struct ControlMap: Codable, Equatable, Sendable {
             ControlBinding(kind: .note, channel: ch, number: 41, action: .panic),
             ControlBinding(kind: .note, channel: ch, number: 42, action: .previousSong),
             ControlBinding(kind: .note, channel: ch, number: 44, action: .nextSong),
-            ControlBinding(kind: .controlChange, channel: ch, number: 80, action: .fill),
-            ControlBinding(kind: .controlChange, channel: ch, number: 81, action: .nextSlot),
-            ControlBinding(kind: .controlChange, channel: ch, number: 82, action: .fill),
         ]
         return ControlMap(bindings: b)
     }()

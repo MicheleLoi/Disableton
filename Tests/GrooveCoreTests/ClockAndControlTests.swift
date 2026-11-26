@@ -122,8 +122,9 @@ final class ControlMapTests: XCTestCase {
         XCTAssertNil(map.action(for: .noteOn(channel: 15, note: 47, velocity: 100)))
         XCTAssertNil(map.action(for: .noteOn(channel: 15, note: 48, velocity: 100)))
         XCTAssertEqual(map.action(for: .programChange(channel: 15, program: 5)), .selectSong(5))
-        XCTAssertEqual(map.action(for: .controlChange(channel: 15, controller: 82, value: 127)), .fill)
-        XCTAssertNil(map.action(for: .controlChange(channel: 15, controller: 82, value: 0)))
+        XCTAssertNil(map.action(for: .controlChange(channel: 15, controller: 80, value: 127))) // SW1 libero
+        XCTAssertNil(map.action(for: .controlChange(channel: 15, controller: 81, value: 127))) // SW2 libero
+        XCTAssertNil(map.action(for: .controlChange(channel: 15, controller: 82, value: 127))) // pedale libero
         XCTAssertNil(map.action(for: .noteOn(channel: 0, note: 36, velocity: 100))) // altro canale
         XCTAssertNil(map.action(for: .noteOff(channel: 15, note: 36, velocity: 0)))
     }
