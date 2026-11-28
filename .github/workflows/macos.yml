@@ -120,6 +120,8 @@ jobs:
           VERSION=0.1.${{ github.run_number }}
           dist/disableton demo --export "dist/Groove di prova" > /dev/null
           (cd dist && zip -qr Groove-di-prova.zip "Groove di prova")
+          python3 scripts/genera-libreria.py "dist/Libreria groove"
+          (cd "dist/Libreria groove" && zip -qr ../Libreria-groove.zip .)
           git log -1 --format='%s%n%n%b' | grep -v -E '^(Co-Authored-By|Claude-Session):' > "$RUNNER_TEMP/note.md"
-          gh release create "v$VERSION" dist/Disableton.zip dist/disableton-cli.zip dist/Groove-di-prova.zip \
+          gh release create "v$VERSION" dist/Disableton.zip dist/disableton-cli.zip dist/Groove-di-prova.zip dist/Libreria-groove.zip \
             --title "Disableton $VERSION" --notes-file "$RUNNER_TEMP/note.md" --target "$GITHUB_SHA" --latest

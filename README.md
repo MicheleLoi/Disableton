@@ -30,6 +30,10 @@ sintetizzatore di macOS, oppure un kit di batteria della workstation stessa.
 **Scarica l'ultima versione:** https://github.com/MicheleLoi/Disableton/releases/latest/download/Disableton.zip
 (la prima volta aprila con clic destro → Apri).
 
+**Libreria di groove pronti** (pop-rock, soul, funk e jazz, anche terzinati: 21 stili, ognuno con
+intro, strofa, ritornello, 3 fill e finale):
+https://github.com/MicheleLoi/Disableton/releases/latest/download/Libreria-groove.zip
+
 **Istruzioni per l'uso: [docs/ISTRUZIONI.md](docs/ISTRUZIONI.md)** (anche dal menu Aiuto dell'app).
 
 Le scelte di progetto sono descritte in [docs/ARCHITETTURA.md](docs/ARCHITETTURA.md).
